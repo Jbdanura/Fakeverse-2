@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChatSidebar } from "@/components/chat/chat-sidebar"
 import { ChatMessages } from "@/components/chat/chat-messages"
 import { ChatEmpty } from "@/components/chat/chat-empty"
+import { toast } from "sonner"
 
 // Sample conversations data
 export const conversations = [
@@ -95,10 +96,34 @@ export const conversations = [
 ]
 
 export function ChatInterface() {
-  const [activeConversation, setActiveConversation] = useState<number | null>(null)
+  const [conversations, setConversations] = useState([])
+  const [activeConversation, setActiveConversation] = useState(null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const handleConversationSelect = (conversationId: number) => {
+  // Fetch conversations from API
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        setIsLoading(true)
+        // Replace with your actual API call
+        const response = await fetch('/api/conversations')
+        if (!response.ok) throw new Error('Failed to fetch conversations')
+        
+        const data = await response.json()
+        setConversations(data)
+      } catch (error) {
+        console.error('Error fetching conversations:', error)
+        toast.error('Failed to load conversations')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchConversations()
+  }, [])
+
+  const handleConversationSelect = (conversationId) => {
     setActiveConversation(conversationId)
     setIsMobileSidebarOpen(false)
   }
@@ -111,21 +136,32 @@ export function ChatInterface() {
 
   return (
     <div className="flex h-full rounded-lg overflow-hidden border bg-background">
-      <ChatSidebar
-        conversations={conversations}
-        activeConversationId={activeConversation}
-        onSelectConversation={handleConversationSelect}
-        isMobileOpen={isMobileSidebarOpen}
-        className="w-full md:w-80 lg:w-96 border-r md:flex"
-      />
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <p>Loading conversations...</p>
+        </div>
+      ) : (
+        <>
+          <ChatSidebar
+            conversations={conversations}
+            activeConversationId={activeConversation}
+            onSelectConversation={handleConversationSelect}
+            isMobileOpen={isMobileSidebarOpen}
+            className="w-full md:w-80 lg:w-96 border-r md:flex"
+          />
 
-      <div className="flex-1 flex flex-col">
-        {selectedConversation ? (
-          <ChatMessages conversation={selectedConversation} onOpenSidebar={toggleMobileSidebar} />
-        ) : (
-          <ChatEmpty onOpenSidebar={toggleMobileSidebar} />
-        )}
-      </div>
+          <div className="flex-1 flex flex-col">
+            {selectedConversation ? (
+              <ChatMessages 
+                conversation={selectedConversation} 
+                onOpenSidebar={toggleMobileSidebar} 
+              />
+            ) : (
+              <ChatEmpty onOpenSidebar={toggleMobileSidebar} />
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

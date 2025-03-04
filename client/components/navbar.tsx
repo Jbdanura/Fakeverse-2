@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Bell, Home, Menu, MessageSquare, Search, Settings, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,9 +16,30 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
+import { notifications, messages } from "@/lib/api"
+import { useAuth } from "@/context/auth-context"
 
 export function Navbar() {
+  const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
+  const [messageCount, setMessageCount] = useState(0)
+  
+  // Fetch notification and message counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        // For now, just use static values of 0 since authentication is required
+        // Later we can implement proper auth and these endpoints
+        setNotificationCount(0);
+        setMessageCount(0);
+      } catch (error) {
+        console.error("Failed to fetch notification/message counts", error);
+      }
+    };
+    
+    fetchCounts();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -104,13 +125,21 @@ export function Navbar() {
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="hidden md:flex relative">
               <MessageSquare className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">3</Badge>
+              {messageCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">
+                  {messageCount > 9 ? '9+' : messageCount}
+                </Badge>
+              )}
               <span className="sr-only">Messages</span>
             </Button>
           </Link>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">5</Badge>
+            {notificationCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </Badge>
+            )}
             <span className="sr-only">Notifications</span>
           </Button>
 
@@ -118,8 +147,8 @@ export function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg?height=32&width=32" alt="@user" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={user?.profile_pic || "/placeholder.svg?height=32&width=32"} alt={user?.username} />
+                  <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -142,7 +171,7 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

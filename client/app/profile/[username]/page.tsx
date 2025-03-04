@@ -2,7 +2,13 @@ import { Navbar } from "@/components/navbar"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { ProfileTabs } from "@/components/profile/profile-tabs"
 
-export default function MyProfilePage({ searchParams }: { searchParams: { tab?: string } }) {
+export default function ProfilePage({ 
+  params, 
+  searchParams 
+}: { 
+  params: { username: string }, 
+  searchParams: { tab?: string } 
+}) {
   // Get the active tab from URL query parameters
   const activeTab = searchParams.tab || "posts"
 
@@ -15,5 +21,4 @@ export default function MyProfilePage({ searchParams }: { searchParams: { tab?: 
       </div>
     </div>
   )
-}
-
+} 

@@ -1,153 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Post } from "@/components/post"
 import Link from "next/link"
-
-interface User {
-  id: number
-  name: string
-  username: string
-  avatar: string
-  isFollowing: boolean
-}
+import { toast } from "sonner"
+import { posts as postsApi } from "@/lib/api"
 
 export function Feed() {
   const [newPostContent, setNewPostContent] = useState("")
+  const [posts, setPosts] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Sample users who liked posts
-  const sampleUsers: User[] = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      username: "sarahj",
-      avatar: "/placeholder.svg?height=100&width=100&text=SJ",
-      isFollowing: true,
-    },
-    {
-      id: 2,
-      name: "Mike Peters",
-      username: "mikepeters",
-      avatar: "/placeholder.svg?height=100&width=100&text=MP",
-      isFollowing: false,
-    },
-    {
-      id: 3,
-      name: "Emma Wilson",
-      username: "emmaw",
-      avatar: "/placeholder.svg?height=100&width=100&text=EW",
-      isFollowing: true,
-    },
-    {
-      id: 4,
-      name: "Alex Morgan",
-      username: "alexm",
-      avatar: "/placeholder.svg?height=100&width=100&text=AM",
-      isFollowing: false,
-    },
-    {
-      id: 5,
-      name: "Taylor Swift",
-      username: "tswift",
-      avatar: "/placeholder.svg?height=100&width=100&text=TS",
-      isFollowing: true,
-    },
-  ]
+  // Fetch posts from the API
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setIsLoading(true)
+        const response = await postsApi.getAll()
+        setPosts(response)
+      } catch (err) {
+        console.error("Failed to fetch posts:", err)
+        setError("Failed to load posts. Please try again later.")
+        toast.error("Failed to load posts")
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  // Sample posts data with likedBy information
-  const posts = [
-    {
-      id: 1,
-      user: {
-        name: "Sarah Johnson",
-        username: "sarahj",
-        avatar: "/placeholder.svg?height=40&width=40&text=SJ",
-      },
-      content:
-        "Just finished my latest photography project! Here's one of my favorite shots from the series. What do you think?",
-      image: "/placeholder.svg?height=400&width=600",
-      timestamp: "2 hours ago",
-      likes: 124,
-      likedBy: sampleUsers.slice(0, 5),
-      comments: [
-        {
-          id: 1,
-          user: {
-            name: "Mike Peters",
-            username: "mikepeters",
-            avatar: "/placeholder.svg?height=32&width=32&text=MP",
-          },
-          content: "This is absolutely stunning! The lighting is perfect.",
-          timestamp: "1 hour ago",
-          likes: 8,
-          likedBy: sampleUsers.slice(0, 3),
-        },
-        {
-          id: 2,
-          user: {
-            name: "Emma Wilson",
-            username: "emmaw",
-            avatar: "/placeholder.svg?height=32&width=32&text=EW",
-          },
-          content: "Love the composition! What camera did you use?",
-          timestamp: "45 minutes ago",
-          likes: 3,
-          likedBy: sampleUsers.slice(2, 4),
-        },
-      ],
-    },
-    {
-      id: 2,
-      user: {
-        name: "Alex Morgan",
-        username: "alexm",
-        avatar: "/placeholder.svg?height=40&width=40&text=AM",
-      },
-      content: "Working from my favorite coffee shop today. The productivity is real! ☕️💻",
-      image: "/placeholder.svg?height=400&width=600",
-      timestamp: "4 hours ago",
-      likes: 87,
-      likedBy: sampleUsers.slice(1, 4),
-      comments: [
-        {
-          id: 1,
-          user: {
-            name: "Taylor Swift",
-            username: "tswift",
-            avatar: "/placeholder.svg?height=32&width=32&text=TS",
-          },
-          content: "That place has the best lattes!",
-          timestamp: "3 hours ago",
-          likes: 12,
-          likedBy: sampleUsers.slice(0, 5),
-        },
-      ],
-    },
-    {
-      id: 3,
-      user: {
-        name: "John Doe",
-        username: "johndoe",
-        avatar: "/placeholder.svg?height=40&width=40&text=JD",
-      },
-      content:
-        "Just published my new article on web development trends in 2023. Check it out and let me know your thoughts!",
-      timestamp: "6 hours ago",
-      likes: 56,
-      likedBy: sampleUsers.slice(0, 2),
-      comments: [],
-    },
-  ]
+    fetchPosts()
+  }, [])
 
-  const handlePostSubmit = () => {
+  const handlePostSubmit = async () => {
     if (newPostContent.trim()) {
-      // In a real app, you would add the post to your state or send to an API
-      console.log("New post:", newPostContent)
-      setNewPostContent("")
+      try {
+        // Create a new post
+        const newPost = await postsApi.create({ content: newPostContent })
+        
+        // Add the new post to the beginning of the posts array
+        setPosts(prevPosts => [newPost, ...prevPosts])
+        
+        // Clear the textarea
+        setNewPostContent("")
+        
+        toast.success("Post created successfully!")
+      } catch (error) {
+        console.error("Failed to create post:", error)
+        toast.error("Failed to create post")
+      }
     }
   }
 
@@ -180,11 +84,19 @@ export function Feed() {
         </CardHeader>
       </Card>
 
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <Post key={post.id} post={post} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="text-center py-10">Loading posts...</div>
+      ) : error ? (
+        <div className="text-center py-10 text-red-500">{error}</div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-10">No posts yet. Be the first to post!</div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <Post key={post.id} post={post} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

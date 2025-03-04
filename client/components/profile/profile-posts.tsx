@@ -1,122 +1,50 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { Post } from "@/components/post"
+import { posts as postsApi } from "@/lib/api"
+import { toast } from "sonner"
 
 export function ProfilePosts() {
-  // Sample users who liked posts
-  const sampleUsers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      username: "sarahj",
-      avatar: "/placeholder.svg?height=100&width=100&text=SJ",
-      isFollowing: true,
-    },
-    {
-      id: 2,
-      name: "Mike Peters",
-      username: "mikepeters",
-      avatar: "/placeholder.svg?height=100&width=100&text=MP",
-      isFollowing: false,
-    },
-    {
-      id: 3,
-      name: "Emma Wilson",
-      username: "emmaw",
-      avatar: "/placeholder.svg?height=100&width=100&text=EW",
-      isFollowing: true,
-    },
-    {
-      id: 5,
-      name: "Taylor Swift",
-      username: "tswift",
-      avatar: "/placeholder.svg?height=100&width=100&text=TS",
-      isFollowing: true,
-    },
-  ]
+  const params = useParams()
+  const username = typeof params?.username === 'string' ? params.username : undefined
+  
+  const [posts, setPosts] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Sample posts data
-  const posts = [
-    {
-      id: 1,
-      user: {
-        name: "John Doe",
-        username: "johndoe",
-        avatar: "/placeholder.svg?height=40&width=40&text=JD",
-      },
-      content:
-        "Just finished my latest photography project! Here's one of my favorite shots from the series. What do you think?",
-      image: "/placeholder.svg?height=400&width=600",
-      timestamp: "2 hours ago",
-      likes: 124,
-      likedBy: sampleUsers,
-      comments: [
-        {
-          id: 1,
-          user: {
-            name: "Mike Peters",
-            username: "mikepeters",
-            avatar: "/placeholder.svg?height=32&width=32&text=MP",
-          },
-          content: "This is absolutely stunning! The lighting is perfect.",
-          timestamp: "1 hour ago",
-          likes: 8,
-          likedBy: sampleUsers.slice(0, 3),
-        },
-        {
-          id: 2,
-          user: {
-            name: "Emma Wilson",
-            username: "emmaw",
-            avatar: "/placeholder.svg?height=32&width=32&text=EW",
-          },
-          content: "Love the composition! What camera did you use?",
-          timestamp: "45 minutes ago",
-          likes: 3,
-          likedBy: sampleUsers.slice(1, 3),
-        },
-      ],
-    },
-    {
-      id: 2,
-      user: {
-        name: "John Doe",
-        username: "johndoe",
-        avatar: "/placeholder.svg?height=40&width=40&text=JD",
-      },
-      content: "Working from my favorite coffee shop today. The productivity is real! ☕️💻",
-      image: "/placeholder.svg?height=400&width=600",
-      timestamp: "2 days ago",
-      likes: 87,
-      likedBy: sampleUsers.slice(0, 2),
-      comments: [
-        {
-          id: 1,
-          user: {
-            name: "Taylor Swift",
-            username: "tswift",
-            avatar: "/placeholder.svg?height=32&width=32&text=TS",
-          },
-          content: "That place has the best lattes!",
-          timestamp: "1 day ago",
-          likes: 12,
-          likedBy: sampleUsers.slice(2, 4),
-        },
-      ],
-    },
-    {
-      id: 3,
-      user: {
-        name: "John Doe",
-        username: "johndoe",
-        avatar: "/placeholder.svg?height=40&width=40&text=JD",
-      },
-      content:
-        "Just published my new article on web development trends in 2023. Check it out and let me know your thoughts!",
-      timestamp: "1 week ago",
-      likes: 56,
-      likedBy: sampleUsers.slice(1, 4),
-      comments: [],
-    },
-  ]
+  useEffect(() => {
+    const fetchUserPosts = async () => {
+      try {
+        setIsLoading(true)
+        
+        // Fetch posts for the specific user - we need to update the API to support this
+        const response = await postsApi.getAll({ username: username });
+        setPosts(response)
+      } catch (err) {
+        console.error("Failed to fetch user posts:", err)
+        setError("Failed to load posts. Please try again later.")
+        toast.error("Failed to load posts")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserPosts()
+  }, [username])
+
+  if (isLoading) {
+    return <div className="text-center py-10">Loading posts...</div>
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>
+  }
+
+  if (posts.length === 0) {
+    return <div className="text-center py-20 text-muted-foreground">No posts yet</div>
+  }
 
   return (
     <div className="space-y-4 max-w-3xl">

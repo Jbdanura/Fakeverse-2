@@ -10,33 +10,34 @@ import Link from "next/link"
 
 interface User {
   id: number
-  name: string
   username: string
-  avatar: string
-  isFollowing: boolean
+  name?: string
+  profile_pic?: string
+  bio?: string
+  isFollowing?: boolean
 }
 
 interface LikesDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  title?: string
+  title: string
   users: User[]
 }
 
-export function LikesDialog({ open, onOpenChange, title = "Likes", users }: LikesDialogProps) {
+export function LikesDialog({ open, onOpenChange, title, users = [] }: LikesDialogProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [followState, setFollowState] = useState<Record<number, boolean>>(() => {
     const state: Record<number, boolean> = {}
     users.forEach((user) => {
-      state[user.id] = user.isFollowing
+      state[user.id] = user.isFollowing || false
     })
     return state
   })
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()),
+      (user.name ? user.name.toLowerCase().includes(searchQuery.toLowerCase()) : false) ||
+      user.username.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const toggleFollow = (userId: number) => {
@@ -50,10 +51,9 @@ export function LikesDialog({ open, onOpenChange, title = "Likes", users }: Like
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl">{title}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-
-        <div className="mt-2 mb-4 relative">
+        <div className="relative mb-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
@@ -63,45 +63,44 @@ export function LikesDialog({ open, onOpenChange, title = "Likes", users }: Like
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
-        <div className="max-h-[60vh] overflow-y-auto">
-          <div className="space-y-4">
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between">
-                  <Link href="/profile" className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar>
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{user.name}</div>
-                      <div className="text-sm text-muted-foreground truncate">@{user.username}</div>
-                    </div>
-                  </Link>
-                  <Button
-                    variant={followState[user.id] ? "outline" : "default"}
-                    size="sm"
-                    onClick={() => toggleFollow(user.id)}
-                  >
-                    {followState[user.id] ? (
-                      <>
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">No users found matching "{searchQuery}"</div>
-            )}
-          </div>
+        <div className="max-h-[60vh] overflow-y-auto space-y-4">
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between">
+                <Link href={`/profile/${user.username}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar>
+                    <AvatarImage src={user.profile_pic || "/placeholder.svg"} alt={user.username} />
+                    <AvatarFallback>{user.username ? user.username[0].toUpperCase() : "U"}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{user.name || user.username}</div>
+                    <div className="text-sm text-muted-foreground truncate">@{user.username}</div>
+                  </div>
+                </Link>
+                <Button
+                  variant={followState[user.id] ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => toggleFollow(user.id)}
+                >
+                  {followState[user.id] ? (
+                    <>
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Following
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              {searchQuery ? `No users found matching "${searchQuery}"` : "No users"}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
