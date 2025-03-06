@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Bell, Home, Menu, MessageSquare, Search, Settings, User } from "lucide-react"
+import { Bell, Home, Menu, MessageSquare, Search, Settings, User, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,14 +17,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
-import { notifications, messages } from "@/lib/api"
+import { notifications, messages, users } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 
 export function Navbar() {
+  const router = useRouter()
   const { user, logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notificationCount, setNotificationCount] = useState(0)
   const [messageCount, setMessageCount] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState([])
+  const [showResults, setShowResults] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const searchRef = useRef(null)
   
   // Fetch notification and message counts
   useEffect(() => {
@@ -40,6 +47,68 @@ export function Navbar() {
     
     fetchCounts();
   }, []);
+
+  // Handle clicking outside search results
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowResults(false)
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+  
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery) {
+      setSearchResults([])
+      setShowResults(false)
+      return
+    }
+    
+    const timer = setTimeout(() => {
+      performSearch(searchQuery)
+    }, 300)
+    
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+  
+  const performSearch = async (query) => {
+    if (!query) return
+    
+    try {
+      setLoading(true)
+      const results = await users.search(query)
+      setSearchResults(results)
+      setShowResults(true)
+    } catch (error) {
+      console.error("Search failed:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && searchQuery) {
+      // Navigate to the first result if available
+      if (searchResults.length > 0) {
+        navigateToProfile(searchResults[0].username)
+      } else {
+        // Or just try to navigate to this username
+        navigateToProfile(searchQuery)
+      }
+    }
+  }
+  
+  const navigateToProfile = (username) => {
+    setShowResults(false)
+    setSearchQuery("")
+    router.push(`/profile/${username}`)
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -110,9 +179,58 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center relative max-w-sm">
+        <div ref={searchRef} className="hidden md:flex items-center relative max-w-sm">
           <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search..." className="w-full pl-8 md:w-[300px] lg:w-[400px]" />
+          <Input 
+            type="search" 
+            placeholder="Search users..." 
+            className="w-full pl-8 md:w-[300px] lg:w-[400px]" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => searchQuery && setShowResults(true)}
+          />
+          {searchQuery && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-2 h-4 w-4" 
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {showResults && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg max-h-[300px] overflow-y-auto z-50">
+              {loading ? (
+                <div className="p-4 text-center">Searching...</div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map(user => (
+                  <div 
+                    key={user.id} 
+                    className="p-2 hover:bg-accent flex items-center gap-2 cursor-pointer"
+                    onClick={() => navigateToProfile(user.username)}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.profile_pic || "/placeholder.svg"} alt={user.username} />
+                      <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{user.username}</div>
+                      <div className="text-xs text-muted-foreground truncate max-w-[300px]">
+                        {user.bio || `@${user.username}`}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-muted-foreground">
+                  No users found matching "{searchQuery}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -163,11 +281,6 @@ export function Navbar() {
               <DropdownMenuItem asChild>
                 <Link href="/settings" className="w-full cursor-pointer">
                   Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/profile?tab=saved" className="w-full cursor-pointer">
-                  Saved Posts
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

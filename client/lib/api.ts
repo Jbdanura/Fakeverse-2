@@ -11,12 +11,19 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // Get token from localStorage if available
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   
+  // For debugging
+  console.log('API call to:', endpoint, 'Token present:', !!token);
+  
   // Set default headers
   const headers = {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
     ...options.headers,
   };
+  
+  // Explicitly add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   try {
     const response = await fetch(url, {
@@ -30,26 +37,12 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
       
       console.error(`API Error: ${url}`, errorMessage);
       
-      if (response.status === 401) {
-        // Handle unauthorized access
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
-        
-        throw new Error("Authentication required");
-      }
-      
       throw new Error(errorMessage);
     }
 
     return await response.json();
   } catch (error) {
     console.error(`API Call Failed: ${url}`, error);
-    // Only show toast for user-facing errors, not for background data loading
-    if (!url.includes('/count')) {
-      toast.error(error.message || 'Network error');
-    }
     throw error;
   }
 }
@@ -69,7 +62,33 @@ export const auth = {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
-  }
+  },
+  
+  // Add refresh token method
+  refreshToken: async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No token found');
+    }
+    
+    try {
+      const response = await fetchApi('/auth/refresh', { 
+        method: 'POST', 
+        body: JSON.stringify({ token })
+      });
+      
+      // Update token in storage
+      localStorage.setItem("token", response.token);
+      if (response.user) {
+        localStorage.setItem("user", JSON.stringify(response.user));
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw error;
+    }
+  },
 };
 
 // Users methods
@@ -84,9 +103,9 @@ export const users = {
         cover_pic: data.cover_pic || "/placeholder.svg?height=400&width=1200",
         location: data.location || "",
         website: data.website || "",
-        post_count: data.post_count || 0,
-        follower_count: data.follower_count || 0,
-        following_count: data.following_count || 0
+        post_count: typeof data.post_count === 'number' ? data.post_count : 0,
+        follower_count: typeof data.follower_count === 'number' ? data.follower_count : 0,
+        following_count: typeof data.following_count === 'number' ? data.following_count : 0
       };
     } catch (error) {
       console.error("Failed to fetch profile:", error);
@@ -103,6 +122,8 @@ export const users = {
     fetchApi(`/users/${username}/followers`),
   getFollowing: (username: string) =>
     fetchApi(`/users/${username}/following`),
+  search: (query: string) => 
+    fetchApi(`/users/search?query=${encodeURIComponent(query)}`),
 };
 
 // Posts methods
@@ -134,31 +155,35 @@ export const posts = {
   like: (id: string) => 
     fetchApi(`/posts/${id}/like`, { method: 'POST' }),
   unlike: (id: string) => 
-    fetchApi(`/posts/${id}/unlike`, { method: 'POST' }),
+    fetchApi(`/posts/${id}/like`, { method: 'DELETE' }),
+  checkLiked: (id: string) => 
+    fetchApi(`/posts/${id}/liked`),
   comment: (id: string, content: string) => 
     fetchApi(`/posts/${id}/comments`, { 
       method: 'POST', 
       body: JSON.stringify({ content }) 
     }),
-  getLikes: (id: string) => fetchApi(`/posts/${id}/likes`),
+  getLikes: (id: string) => 
+    fetchApi(`/posts/${id}/likes`),
 };
 
 // Search methods
 export const search = {
   all: (query: string) => fetchApi(`/search?q=${encodeURIComponent(query)}`),
-  users: (query: string) => fetchApi(`/search/users?q=${encodeURIComponent(query)}`),
-  posts: (query: string) => fetchApi(`/search/posts?q=${encodeURIComponent(query)}`),
+  users: (query: string) => fetchApi(`/users/search?query=${encodeURIComponent(query)}`)
 };
 
-// Add notifications service
-export const notifications = {
-  getCount: () => fetchApi('/notifications/count'),
-  getAll: () => fetchApi('/notifications'),
-  markAsRead: (id: string) => fetchApi(`/notifications/${id}/read`, { method: 'POST' }),
+// Comments methods
+export const comments = {
+  getForPost: (postId: string) => 
+    fetchApi(`/comments/post/${postId}`),
+  
+  add: (postId: string, content: string) => 
+    fetchApi(`/comments/post/${postId}`, { 
+      method: 'POST', 
+      body: JSON.stringify({ content }) 
+    }),
+  
+  delete: (commentId: string) => 
+    fetchApi(`/comments/${commentId}`, { method: 'DELETE' })
 };
-
-// Add messages service
-export const messages = {
-  getUnreadCount: () => fetchApi('/messages/count'),
-  getChats: () => fetchApi('/messages/chats'),
-}; 

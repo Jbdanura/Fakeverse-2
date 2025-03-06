@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,6 +19,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { posts as postsApi } from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/context/auth-context"
+import { Comment } from "@/components/comment"
+import { comments } from "@/lib/api"
+import { Loader2 } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
 
 interface User {
   id: number
@@ -62,20 +65,34 @@ interface PostProps {
     username?: string
     profile_pic?: string
   }
+  onLikeUpdate?: (postId: number, isLiked: boolean, likeCount: number) => void
+  onCommentUpdate?: (postId: number, commentCount: number) => void
 }
 
-export function Post({ post }: PostProps) {
+export function Post({ post, onLikeUpdate, onCommentUpdate }: PostProps) {
+  const { user: authUser } = useAuth()
   const [liked, setLiked] = useState(post.isLiked || false)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
-  const [likeCount, setLikeCount] = useState(post.like_count || post.likes || 0)
+  const [likeCount, setLikeCount] = useState(() => {
+    // Ensure we always use a valid number
+    const count = post?.like_count ? parseInt(post.like_count) : 0;
+    console.log(`Initial like count for post ${post.id}:`, count);
+    return isNaN(count) ? 0 : count;
+  });
   const [showLikesDialog, setShowLikesDialog] = useState(false)
   const [showCommentLikesDialog, setShowCommentLikesDialog] = useState(false)
   const [selectedCommentId, setSelectedCommentId] = useState(null)
-  const [comments, setComments] = useState(post.comments || [])
+  const [postCommentsList, setPostCommentsList] = useState(post.comments || [])
   const [likedByUsers, setLikedByUsers] = useState<User[]>([])
   const [loadingLikes, setLoadingLikes] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [isLiked, setIsLiked] = useState(post.isLiked || false)
+  const [postComments, setPostComments] = useState([])
+  const [commentCount, setCommentCount] = useState(post?.comment_count ? parseInt(post.comment_count) : 0)
+  const [loadingComments, setLoadingComments] = useState(false)
+  const [submittingComment, setSubmittingComment] = useState(false)
 
   // Console.log to debug the actual structure
   console.log("Post data:", post);
@@ -92,20 +109,15 @@ export function Post({ post }: PostProps) {
   const fetchLikes = async () => {
     try {
       setLoadingLikes(true);
-      const likesData = await postsApi.getLikes(post.id);
+      setLikedByUsers([]); // Clear existing data while loading
       
-      // Format the likes data for the LikesDialog component
-      const formattedLikes = likesData.map(user => ({
-        id: user.id,
-        name: user.name || user.username, // Use username if name isn't available
-        username: user.username,
-        avatar: user.profile_pic || "/placeholder.svg?height=100&width=100",
-        isFollowing: false // We won't know this without another API call
-      }));
-      
-      setLikedByUsers(formattedLikes);
+      const likesData = await postsApi.getLikes(post.id.toString());
+      console.log(`Fetched ${likesData.length} likes for post ${post.id}`);
+      setLikedByUsers(likesData);
     } catch (error) {
       console.error("Failed to fetch likes:", error);
+      // Set to empty array on error
+      setLikedByUsers([]);
       toast.error("Failed to load likes");
     } finally {
       setLoadingLikes(false);
@@ -113,20 +125,114 @@ export function Post({ post }: PostProps) {
   };
 
   const handleLike = async () => {
-    try {
-      if (liked) {
-        await postsApi.unlike(post.id)
-        setLikeCount(prevCount => prevCount - 1)
-      } else {
-        await postsApi.like(post.id)
-        setLikeCount(prevCount => prevCount + 1)
-      }
-      setLiked(!liked)
-    } catch (error) {
-      console.error("Failed to like/unlike post:", error)
-      toast.error("Failed to update like")
+    // Check if user is authenticated
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token');
+    
+    if (!authUser || !hasToken) {
+      toast.error("Please login to like posts");
+      return;
     }
-  }
+    
+    // Prevent multiple clicks during loading
+    if (loading) return;
+    
+    try {
+      setLoading(true);
+      
+      // Get the current like state and count
+      const currentLiked = isLiked;
+      const currentCount = likeCount;
+      
+      // Optimistically update UI
+      const newLikeState = !currentLiked;
+      setIsLiked(newLikeState);
+      
+      // Update the count (increment or decrement by 1)
+      const newLikeCount = newLikeState ? currentCount + 1 : Math.max(0, currentCount - 1);
+      setLikeCount(newLikeCount);
+      
+      // If unliking and popup is open, remove self from likes list immediately
+      if (!newLikeState && showLikesDialog && authUser) {
+        // Instead of filtering, refresh the entire list to be safe
+        fetchLikes();
+      }
+      
+      // Notify parent component of like update
+      if (onLikeUpdate) {
+        onLikeUpdate(post.id, newLikeState, newLikeCount);
+      }
+      
+      // Make API call
+      try {
+        if (newLikeState) {
+          const response = await postsApi.like(post.id.toString());
+          
+          // Use the server-provided count
+          if (response && typeof response.likeCount === 'number') {
+            setLikeCount(response.likeCount);
+            
+            // Update parent with real count
+            if (onLikeUpdate) {
+              onLikeUpdate(post.id, true, response.likeCount);
+            }
+          }
+          
+          // If popup is open, refresh likes list
+          if (showLikesDialog) {
+            fetchLikes();
+          }
+        } else {
+          const response = await postsApi.unlike(post.id.toString());
+          
+          // Use the server-provided count
+          if (response && typeof response.likeCount === 'number') {
+            setLikeCount(response.likeCount);
+            
+            // Update parent with real count
+            if (onLikeUpdate) {
+              onLikeUpdate(post.id, false, response.likeCount);
+            }
+          }
+          
+          // If popup is open, refresh likes list
+          if (showLikesDialog) {
+            fetchLikes();
+          }
+        }
+      } catch (apiError) {
+        console.error("API error:", apiError);
+        
+        // Handle error cases...
+        // Revert UI changes and notify user
+        setIsLiked(currentLiked);
+        setLikeCount(currentCount);
+        
+        // If we reverted an unlike, put the user back in the likes list
+        if (currentLiked && showLikesDialog && authUser) {
+          fetchLikes(); // Re-fetch the complete list
+        }
+        
+        // Show appropriate error
+        if (apiError.message?.includes('Post already liked')) {
+          toast.error("You've already liked this post");
+        } else if (apiError.message?.includes('Post was not liked')) {
+          toast.error("You haven't liked this post");
+        } else {
+          toast.error("Failed to update like");
+        }
+        
+        // Notify parent of reversion
+        if (onLikeUpdate) {
+          onLikeUpdate(post.id, currentLiked, currentCount);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to like/unlike post:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = () => {
     setSaved(!saved)
@@ -136,8 +242,8 @@ export function Post({ post }: PostProps) {
     if (commentText.trim()) {
       try {
         const response = await postsApi.comment(post.id, commentText)
-        setComments(prev => [...prev, response])
-        setCommentText("")
+        setPostCommentsList(prev => [...prev, response])
+      setCommentText("")
       } catch (error) {
         console.error("Failed to add comment:", error)
         toast.error("Failed to add comment")
@@ -147,16 +253,13 @@ export function Post({ post }: PostProps) {
 
   const openLikesDialog = async () => {
     try {
-      setShowLikesDialog(true)
-      // Here you would normally fetch likes data, but since you mentioned API issues
-      // we'll use an empty array or minimal mock data as a temporary solution
-      setLikedByUsers([])
-      // Later implement: const likes = await posts.getLikes(post.id)
-      // setLikedByUsers(likes)
+      setShowLikesDialog(true);
+      fetchLikes();
     } catch (error) {
-      console.error("Failed to load likes", error)
+      console.error("Failed to open likes dialog:", error);
+      toast.error("Failed to load likes");
     }
-  }
+  };
 
   const openCommentLikesDialog = (commentId) => {
     // This would need a similar API endpoint for comment likes
@@ -200,6 +303,129 @@ export function Post({ post }: PostProps) {
   // For debugging - log the post structure to console
   console.log("Post data structure:", post)
 
+  useEffect(() => {
+    console.log(`Post ${post.id} like count:`, likeCount)
+  }, [post.id, likeCount])
+
+  useEffect(() => {
+    // Only check liked status if we don't already know
+    if (post?.is_liked === undefined) {
+      const checkLiked = async () => {
+        if (!authUser) return
+        
+        try {
+          const response = await postsApi.checkLiked(post.id.toString())
+          setIsLiked(response.liked)
+          
+          // Update like count if provided
+          if (response.likeCount !== undefined) {
+            setLikeCount(response.likeCount)
+          }
+        } catch (error) {
+          console.error("Failed to check if post is liked:", error)
+        }
+      }
+      
+      checkLiked()
+    } else {
+      setIsLiked(!!post.is_liked)
+    }
+  }, [post, authUser])
+
+  useEffect(() => {
+    if (post?.comment_count !== undefined) {
+      const count = parseInt(post.comment_count)
+      if (!isNaN(count)) {
+        setCommentCount(count)
+      }
+    }
+  }, [post])
+
+  const fetchComments = async () => {
+    if (!showComments) return
+    
+    try {
+      setLoadingComments(true)
+      
+      const data = await comments.getForPost(post.id.toString())
+      console.log("Fetched comments:", data); // Log comments data for debugging
+      setPostComments(data)
+    } catch (error) {
+      console.error("Failed to fetch comments:", error)
+      setPostComments([])
+      toast.error("Failed to load comments")
+    } finally {
+      setLoadingComments(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchComments()
+  }, [showComments])
+
+  const handleToggleComments = () => {
+    setShowComments(prev => !prev)
+  }
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!commentText.trim()) return
+    
+    try {
+      setSubmittingComment(true)
+      
+      const { comment, commentCount: newCount } = await comments.add(post.id.toString(), commentText)
+      
+      // Add the new comment to the list
+      setPostComments(prev => [...prev, comment])
+      
+      // Update comment count
+      setCommentCount(newCount)
+      
+      // Clear the input
+      setCommentText("")
+      
+      // Notify parent if needed
+      if (onCommentUpdate) {
+        onCommentUpdate(post.id, newCount)
+      }
+    } catch (error) {
+      console.error("Failed to add comment:", error)
+      toast.error("Failed to add comment")
+    } finally {
+      setSubmittingComment(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      // No need to make the API call here as it's already handled in the Comment component
+      // Just update the UI
+      setPostComments(prev => prev.filter(comment => comment.id.toString() !== commentId))
+      
+      // Update the comment count
+      setCommentCount(prev => Math.max(0, prev - 1))
+      
+      // Notify parent if needed
+      if (onCommentUpdate) {
+        onCommentUpdate(post.id, commentCount - 1)
+      }
+    } catch (error) {
+      console.error("Failed to handle comment deletion:", error)
+      // Refresh comments to get accurate state
+      fetchComments()
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true })
+    } catch (e) {
+      return "some time ago"
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -213,7 +439,7 @@ export function Post({ post }: PostProps) {
               <div className="font-medium">{post.username || "Unknown User"}</div>
               <div className="text-xs text-muted-foreground">@{post.username || "unknown"}</div>
               <div className="text-xs text-muted-foreground mt-1">
-                {formatTimestamp(post.created_at || post.timestamp)}
+                {formatDate(post.created_at || post.timestamp)}
               </div>
             </div>
           </Link>
@@ -258,7 +484,7 @@ export function Post({ post }: PostProps) {
             <span>{likeCount} likes</span>
           </button>
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
-            <span>{comments.length} comments</span>
+            <span>{commentCount} comments</span>
           </div>
         </div>
 
@@ -266,22 +492,23 @@ export function Post({ post }: PostProps) {
 
         <div className="flex items-center justify-between w-full">
           <Button
-            variant="ghost"
+            variant={isLiked ? "default" : "ghost"}
             size="sm"
-            className="flex items-center gap-1 text-muted-foreground"
+            className={cn("gap-1", isLiked ? "bg-red-500 hover:bg-red-600 text-white" : "")}
             onClick={handleLike}
+            disabled={loading}
           >
-            <Heart className={cn("h-4 w-4", liked ? "fill-primary text-primary" : "")} />
-            Like
+            <Heart className={cn("h-4 w-4", isLiked ? "fill-current" : "")} />
+            {isLiked ? "Liked" : likeCount}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="flex items-center gap-1 text-muted-foreground"
-            onClick={() => setShowComments(!showComments)}
+            onClick={handleToggleComments}
           >
             <MessageCircle className="h-4 w-4" />
-            Comment
+            {commentCount}
           </Button>
           <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground">
             <BookmarkIcon className={`h-4 w-4 ${saved ? "fill-primary text-primary" : ""}`} />
@@ -290,59 +517,70 @@ export function Post({ post }: PostProps) {
         </div>
 
         {showComments && (
-          <div className="w-full mt-3 space-y-3">
-            <Separator />
-
-            {comments.length === 0 ? (
-              <p className="text-sm text-center text-muted-foreground">No comments yet</p>
-            ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="flex items-start gap-2 pt-3">
-                  <Link href={`/profile/${comment.user.username}`}>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.user.avatar || "/placeholder.svg?height=32&width=32"} alt={comment.user.username} />
-                      <AvatarFallback>{comment.user.name ? comment.user.name.charAt(0) : 'U'}</AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <div className="flex-1">
-                    <div className="bg-muted p-2 rounded-md">
-                      <Link href={`/profile/${comment.user.username}`} className="font-semibold text-sm">
-                        {comment.user.name}
-                      </Link>
-                      <p className="text-sm">{comment.content}</p>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <button className="hover:text-foreground">Like</button>
-                      <button className="hover:text-foreground">Reply</button>
-                      <button
-                        className="hover:text-foreground hover:underline"
-                        onClick={() => openCommentLikesDialog(comment.id)}
-                      >
-                        {comment.likes} likes
-                      </button>
-                      <span>{formatTimestamp(comment.timestamp || comment.created_at)}</span>
+          <div className="w-full px-4 pt-0 pb-4">
+            <div className="w-full pt-4 border-t">
+              {/* Comment input */}
+              {authUser && (
+                <form onSubmit={handleSubmitComment} className="mb-4 w-full">
+                  <div className="flex w-full items-start space-x-2">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={authUser.profile_pic || "/placeholder.svg"} alt={authUser.username} />
+                      <AvatarFallback>{authUser.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                  </Avatar>
+                    <div className="flex-1 w-full">
+                      <Textarea
+                        placeholder="Write a comment..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        className="min-h-[80px] resize-none w-full mb-2"
+                      />
+                      <div className="flex justify-end w-full">
+                        <Button 
+                          type="submit" 
+                          size="sm" 
+                          disabled={!commentText.trim() || submittingComment}
+                        >
+                          {submittingComment ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Posting...
+                            </>
+                          ) : (
+                            "Post Comment"
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                </form>
+              )}
 
-            <div className="flex items-center gap-2 pt-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" alt="@you" />
-                <AvatarFallback>You</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 flex items-center gap-2">
-                <Textarea
-                  placeholder="Write a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  className="flex-1"
-                />
-                <Button size="icon" variant="ghost" onClick={handleComment} disabled={!commentText.trim()}>
-                  <Send className="h-4 w-4" />
-                  <span className="sr-only">Send comment</span>
-                </Button>
+              {/* Comments list */}
+              <div className="space-y-4">
+                {loadingComments ? (
+                  <div className="py-4 flex justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : postComments.length > 0 ? (
+                  <>
+                    <h4 className="text-sm font-medium mb-2">
+                      {postComments.length} {postComments.length === 1 ? "Comment" : "Comments"}
+                    </h4>
+                    <div className="space-y-4">
+                      {postComments.map(comment => (
+                        <Comment 
+                          key={comment.id} 
+                          comment={comment} 
+                          onDelete={handleDeleteComment} 
+                        />
+                      ))}
+                </div>
+                  </>
+                ) : (
+                  <div className="py-4 text-center text-muted-foreground">
+                    No comments yet. Be the first to comment!
+              </div>
+                )}
               </div>
             </div>
           </div>

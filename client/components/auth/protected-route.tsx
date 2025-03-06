@@ -18,8 +18,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // List of public routes that don't require authentication
     const publicRoutes = ["/login", "/register"]
     
-    // If not loading and not authenticated and not on a public route
-    if (!isLoading && !isAuthenticated && !publicRoutes.includes(pathname)) {
+    // Check if token exists regardless of authentication state
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token')
+    
+    // Only redirect if:
+    // 1. Not loading AND
+    // 2. Not authenticated AND
+    // 3. No token exists AND
+    // 4. Not on a public route
+    if (!isLoading && !isAuthenticated && !hasToken && !publicRoutes.includes(pathname)) {
       router.push("/login")
     }
   }, [isAuthenticated, isLoading, pathname, router])
@@ -36,11 +43,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // List of public routes that don't require authentication
   const publicRoutes = ["/login", "/register"]
   
-  // If not authenticated and not on a public route, don't render children
-  if (!isAuthenticated && !publicRoutes.includes(pathname)) {
+  // Check if token exists regardless of authentication state
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('token')
+  
+  // If not authenticated, no token, and not on a public route, don't render children
+  if (!isAuthenticated && !hasToken && !publicRoutes.includes(pathname)) {
     return null
   }
 
-  // Render children for authenticated users or on public routes
+  // Render children otherwise
   return <>{children}</>
 } 

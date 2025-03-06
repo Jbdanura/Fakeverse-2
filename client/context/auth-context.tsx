@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { auth } from "@/lib/api"
 import { toast } from "sonner"
@@ -20,6 +20,7 @@ interface AuthContextType {
   login: (credentials: { email: string; password: string }) => Promise<void>
   register: (userData: { username: string; email: string; password: string }) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -29,9 +30,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  // Add a ref to track whether initial auth check is complete
+  const initialAuthCheckComplete = useRef(false)
+  // Add a ref to track last refresh time
+  const lastRefreshTime = useRef(0)
 
-  // Check if user is already logged in on mount
+  // Get user data from localStorage
+  const getUserFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem("user")
+      if (userData) {
+        try {
+          return JSON.parse(userData)
+        } catch (e) {
+          console.error("Failed to parse user data:", e)
+        }
+      }
+    }
+    return null
+  }
+
+  const refreshUser = async () => {
+    // Prevent excessive refreshes - only refresh once every 5 minutes
+    const now = Date.now()
+    if (now - lastRefreshTime.current < 5 * 60 * 1000) {
+      return user || getUserFromStorage()
+    }
+    
+    // Only attempt if we have a token
+    if (typeof window !== 'undefined' && localStorage.getItem("token")) {
+      try {
+        const response = await auth.validateToken()
+        if (response && response.user) {
+          // Make sure user data has all required fields
+          const updatedUser = {
+            ...response.user,
+            post_count: response.user.post_count || 0,
+            follower_count: response.user.follower_count || 0,
+            following_count: response.user.following_count || 0
+          };
+          
+          localStorage.setItem("user", JSON.stringify(updatedUser))
+          setUser(updatedUser)
+          lastRefreshTime.current = now
+          return updatedUser
+        }
+      } catch (error) {
+        console.warn("Failed to refresh user:", error)
+      }
+    }
+    
+    // Return current stored user as fallback
+    return user || getUserFromStorage()
+  }
+
+  // Check if user is already logged in on mount - ONCE ONLY
   useEffect(() => {
+    // Skip if initial auth check is already complete
+    if (initialAuthCheckComplete.current) return
+    
     const checkAuth = async () => {
       setIsLoading(true)
       
@@ -41,45 +98,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (!token) {
           // No token found, user is not authenticated
-          handleUnauthenticated()
+          setUser(null)
+          
+          // Only redirect if on a protected route
+          const publicRoutes = ["/login", "/register"]
+          if (!publicRoutes.includes(pathname)) {
+            router.push("/login")
+          }
           return
         }
         
-        // Validate token with backend
+        // If we have a token, get user from localStorage first
+        const storedUser = getUserFromStorage()
+        if (storedUser) {
+          setUser(storedUser)
+        }
+        
+        // Try to validate token, but don't log out if it fails
         try {
-          await auth.validateToken()
-          
-          // Token is valid, get user data
-          const userData = localStorage.getItem("user")
-          if (userData) {
-            setUser(JSON.parse(userData))
-          }
+          await refreshUser()
         } catch (error) {
-          // Token is invalid or expired
-          console.error("Token validation failed:", error)
-          localStorage.removeItem("token")
-          localStorage.removeItem("user")
-          handleUnauthenticated()
+          console.warn("Token validation failed, but continuing with stored user:", error)
         }
       } finally {
         setIsLoading(false)
+        initialAuthCheckComplete.current = true
       }
     }
     
     checkAuth()
-  }, [])
-
-  // Handle unauthenticated state
-  const handleUnauthenticated = () => {
-    setUser(null)
-    
-    // Check if current route is protected
-    const publicRoutes = ["/login", "/register"]
-    if (!publicRoutes.includes(pathname)) {
-      // Redirect to login if on a protected route
-      router.push("/login")
-    }
-  }
+  }, [pathname, router])
 
   // Login function
   const login = async (credentials: { email: string; password: string }) => {
@@ -95,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user)
       toast.success("Successfully logged in!")
       
-      // Use window.location for a complete page refresh
+      // Use window.location for a complete page refresh to ensure clean state
       window.location.href = "/"
       return true
     } catch (error) {
@@ -142,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        refreshUser
       }}
     >
       {children}

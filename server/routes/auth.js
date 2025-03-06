@@ -101,9 +101,124 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// Add this endpoint to validate tokens
-router.get('/validate', auth, (req, res) => {
-  res.json({ valid: true, user: req.user });
+// Validate token
+router.get('/validate', async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret-key');
+      
+      // Get full user data with counts
+      const result = await db.query(
+        'SELECT id, username, email, profile_pic, bio, created_at FROM users WHERE id = $1',
+        [decoded.user.id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Get post count
+      const postsResult = await db.query(
+        'SELECT COUNT(*) FROM posts WHERE user_id = $1',
+        [decoded.user.id]
+      );
+      
+      // Get follower count
+      let followerCount = 0;
+      try {
+        const followerResult = await db.query(
+          'SELECT COUNT(*) FROM followers WHERE followed_id = $1',
+          [decoded.user.id]
+        );
+        followerCount = parseInt(followerResult.rows[0].count || 0);
+      } catch (err) {
+        console.log('Error getting follower count:', err.message);
+      }
+      
+      // Get following count
+      let followingCount = 0;
+      try {
+        const followingResult = await db.query(
+          'SELECT COUNT(*) FROM followers WHERE follower_id = $1',
+          [decoded.user.id]
+        );
+        followingCount = parseInt(followingResult.rows[0].count || 0);
+      } catch (err) {
+        console.log('Error getting following count:', err.message);
+      }
+      
+      const user = {
+        ...result.rows[0],
+        post_count: parseInt(postsResult.rows[0].count || 0),
+        follower_count: followerCount,
+        following_count: followingCount
+      };
+      
+      return res.json({ user });
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Add this route for token refresh
+router.post('/refresh', async (req, res, next) => {
+  try {
+    // Get token from request body
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-default-secret-key');
+    
+    // Check if user exists
+    const result = await db.query('SELECT id, username, email FROM users WHERE id = $1', [decoded.user.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = result.rows[0];
+    
+    // Generate a new token with a much longer expiration time to reduce refresh needs
+    const payload = {
+      user: {
+        id: user.id
+      }
+    };
+    
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET || 'your-default-secret-key',
+      { expiresIn: '7d' }, // Increase token lifetime to 7 days
+      (err, newToken) => {
+        if (err) throw err;
+        
+        res.json({
+          token: newToken,
+          user
+        });
+      }
+    );
+  } catch (err) {
+    // If token verification fails, return 401
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    
+    next(err);
+  }
 });
 
 module.exports = router; 

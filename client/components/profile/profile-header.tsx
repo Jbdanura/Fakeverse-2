@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -15,12 +15,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { FollowersDialog } from "@/components/profile/followers-dialog"
 import { users } from "@/lib/api"
+import { useAuth } from "@/context/auth-context"
 import { toast } from "sonner"
+import { auth } from "@/lib/api"
 
 export function ProfileHeader() {
   const params = useParams()
   const router = useRouter()
   const username = typeof params?.username === 'string' ? params.username : undefined
+  const { user: authUser, refreshUser } = useAuth()
 
   const [isFollowing, setIsFollowing] = useState(false)
   const [showFollowersDialog, setShowFollowersDialog] = useState(false)
@@ -28,13 +31,6 @@ export function ProfileHeader() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  // Check if user is authenticated
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    setIsAuthenticated(!!token)
-  }, [])
 
   // Fetch user data
   useEffect(() => {
@@ -43,39 +39,36 @@ export function ProfileHeader() {
         setLoading(true)
         setError(null)
         
-        // If no username provided and user is not authenticated, show error
-        if (!username && !isAuthenticated) {
-          setError('Please log in to view your profile')
-          return
+        // If we're viewing current user profile, try to refresh token first
+        if (!username || username === 'me') {
+          try {
+            // Try to refresh the token silently
+            await auth.refreshToken()
+            await refreshUser() // Use the auth context's refreshUser method
+          } catch (refreshErr) {
+            console.warn('Token refresh failed, continuing with current token:', refreshErr)
+          }
         }
         
-        // If username is provided in route, fetch that user, otherwise fetch current user
-        if (username === 'me' && !isAuthenticated) {
-          // Redirect to login if trying to view own profile without being logged in
-          router.push('/login') // Assuming you have a login page
-          return
+        // If we're viewing the current user's profile, start with authUser data
+        if (!username || username === 'me') {
+          setUser(authUser) // Start with auth context data while loading
         }
         
         try {
+          // Try to fetch updated profile data
           const profileData = await users.getProfile(username || 'me')
           setUser(profileData)
         } catch (err) {
           console.error('Failed to fetch profile:', err)
           
-          // Handle 401 errors specifically
-          if (err.message.includes('token') || err.message.includes('authorization')) {
-            if (!username) {
-              setError('Please log in to view your profile')
-            } else {
-              // For other users' profiles, we should still be able to view even if not logged in
-              // This requires updating the backend to allow viewing profiles without auth
-              setError('Failed to load profile. Authentication issues.')
-            }
+          // For current user, if API call fails, keep using auth context data
+          if ((!username || username === 'me') && authUser) {
+            console.log('Using auth context user data as fallback')
+            // Don't set error if we have fallback data
           } else {
             setError('Failed to load profile')
           }
-          
-          toast.error('Failed to load profile')
         }
       } finally {
         setLoading(false)
@@ -83,10 +76,10 @@ export function ProfileHeader() {
     }
 
     fetchUserProfile()
-  }, [username, isAuthenticated, router])
+  }, [username, authUser])
 
   const toggleFollow = () => {
-    if (!isAuthenticated) {
+    if (!user) {
       toast.error('Please log in to follow users')
       return
     }
@@ -104,7 +97,7 @@ export function ProfileHeader() {
   }
 
   // Show loading state
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="flex justify-center items-center py-20">
         <div className="animate-pulse">Loading profile...</div>
@@ -112,21 +105,15 @@ export function ProfileHeader() {
     )
   }
 
-  // Show error state with more detail and action
-  if (error || !user) {
+  // Show error state only if we have no user data at all
+  if (error && !user) {
     return (
       <div className="flex flex-col justify-center items-center py-20">
         <div className="text-lg font-medium mb-2">Could not load profile</div>
-        <div className="text-sm text-muted-foreground mb-4">{error || 'Unknown error'}</div>
-        {error && error.includes('log in') ? (
-          <Button onClick={() => router.push('/login')}>
-            Log In
-          </Button>
-        ) : (
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
-        )}
+        <div className="text-sm text-muted-foreground mb-4">{error}</div>
+        <Button onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
       </div>
     )
   }

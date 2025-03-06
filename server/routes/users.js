@@ -44,57 +44,119 @@ router.get('/me', auth, async (req, res, next) => {
 // Get user by username
 router.get('/:username', async (req, res, next) => {
   try {
-    // For 'me' endpoint, require authentication
-    if (req.params.username === 'me') {
-      if (!req.user) {
-        return res.status(401).json({ message: 'No token, authorization denied' });
-      }
-      // Continue with fetching the current user's profile
-      const result = await db.query(
-        'SELECT id, username, email, profile_pic, bio, created_at FROM users WHERE id = $1',
-        [req.user.id]
-      );
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Fetch counts and return user (rest of the code as before)
-      // ...
+    // If username is 'me', get the current user's profile
+    const username = req.params.username;
+    const isCurrentUser = username === 'me';
+    
+    // For 'me' endpoint, we need authentication
+    if (isCurrentUser && !req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Get user ID - either from req.user (for 'me') or by querying the username
+    let userId;
+    if (isCurrentUser) {
+      userId = req.user.id;
     } else {
-      // For other usernames, don't require authentication
-      // This allows viewing others' profiles without logging in
-      const result = await db.query(
-        'SELECT id, username, profile_pic, bio, created_at FROM users WHERE username = $1',
-        [req.params.username]
+      const userResult = await db.query(
+        'SELECT id FROM users WHERE username = $1',
+        [username]
       );
       
-      if (result.rows.length === 0) {
+      if (userResult.rows.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
       
-      const userId = result.rows[0].id;
+      userId = userResult.rows[0].id;
+    }
+    
+    // Get user data
+    const result = await db.query(
+      'SELECT id, username, email, profile_pic, bio, created_at FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Get post count
+    const postsResult = await db.query(
+      'SELECT COUNT(*) FROM posts WHERE user_id = $1',
+      [userId]
+    );
+    
+    // Get follower count - create table if it doesn't exist
+    let followerCount = 0;
+    try {
+      // First, ensure followers table exists
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS followers (
+          id SERIAL PRIMARY KEY,
+          follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          followed_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(follower_id, followed_id)
+        )
+      `);
       
-      // Get post count
-      const postsResult = await db.query(
-        'SELECT COUNT(*) FROM posts WHERE user_id = $1',
+      const followerResult = await db.query(
+        'SELECT COUNT(*) FROM followers WHERE followed_id = $1',
         [userId]
       );
-      
-      // Construct user object with defaults
-      const user = {
-        ...result.rows[0],
-        cover_pic: "/placeholder.svg?height=400&width=1200", // Default cover image
-        location: "", // Default empty location
-        website: "", // Default empty website
-        post_count: parseInt(postsResult.rows[0].count || 0),
-        follower_count: 0, // Default counts for followers/following
-        following_count: 0,
-        isFollowing: false
-      };
-      
-      res.json(user);
+      followerCount = parseInt(followerResult.rows[0].count || 0);
+    } catch (err) {
+      console.log('Error getting follower count:', err.message);
     }
+    
+    // Get following count
+    let followingCount = 0;
+    try {
+      const followingResult = await db.query(
+        'SELECT COUNT(*) FROM followers WHERE follower_id = $1',
+        [userId]
+      );
+      followingCount = parseInt(followingResult.rows[0].count || 0);
+    } catch (err) {
+      console.log('Error getting following count:', err.message);
+    }
+    
+    // Check if the current user is following this user
+    let isFollowing = false;
+    if (req.user && req.user.id !== userId) {
+      try {
+        const followCheck = await db.query(
+          'SELECT 1 FROM followers WHERE follower_id = $1 AND followed_id = $2',
+          [req.user.id, userId]
+        );
+        isFollowing = followCheck.rows.length > 0;
+      } catch (err) {
+        console.log('Error checking follow status:', err.message);
+      }
+    }
+    
+    // Construct user object with counts
+    const user = {
+      ...result.rows[0],
+      cover_pic: "/placeholder.svg?height=400&width=1200",
+      location: "",
+      website: "",
+      post_count: parseInt(postsResult.rows[0].count || 0),
+      follower_count: followerCount,
+      following_count: followingCount,
+      isFollowing: isFollowing
+    };
+    
+    // Log the user object to verify data
+    console.log(`User profile for ${username}:`, {
+      id: user.id,
+      username: user.username,
+      post_count: user.post_count,
+      follower_count: user.follower_count,
+      following_count: user.following_count
+    });
+    
+    res.json(user);
   } catch (err) {
     next(err);
   }
@@ -216,6 +278,30 @@ router.put('/me', auth, async (req, res, next) => {
     );
     
     res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Add this route to search for users
+router.get('/search', async (req, res, next) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+    
+    // Search users by username or name that starts with the query
+    const result = await db.query(
+      `SELECT id, username, profile_pic, bio FROM users 
+       WHERE username ILIKE $1 
+       ORDER BY username 
+       LIMIT 10`,
+      [`${query}%`]
+    );
+    
+    res.json(result.rows);
   } catch (err) {
     next(err);
   }
