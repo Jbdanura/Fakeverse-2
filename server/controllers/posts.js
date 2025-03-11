@@ -156,7 +156,6 @@ postsRouter.post("/comment/:postId",getToken,async(req,res)=>{
 })
 postsRouter.post("/like/:postId",getToken,async(req,res)=>{
     try {
-        console.log("here")
         const user = req.user
         const postId = req.params.postId
         const post = await Post.findByPk(postId)
