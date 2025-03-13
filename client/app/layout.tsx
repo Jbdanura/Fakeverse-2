@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "SocialSphere - Connect with friends",
+  title: "Fakeverse - Connect with friends",
   description: "A social media platform to connect with friends and share your moments",
     generator: 'v0.dev'
 }
