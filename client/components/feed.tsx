@@ -1,111 +1,86 @@
-"use client"
+"use client";
 
-import { useState,useEffect } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Post } from "@/components/post"
-import axios from "axios"
-import Link from "next/link"
-
-interface User {
-  id: number
-  name: string
-  username: string
-  avatar: string
-  isFollowing: boolean
-}
+import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Post } from "@/components/post";
+import axios from "axios";
+import Link from "next/link";
 
 interface FeedProps {
-  baseUrl: string
+  baseUrl: string;
 }
 
-interface PostType {
-  id: number
+export interface PostType {
+  id: number;
   user: {
-    name: string
-    username: string
-    avatar: string
-  }
-  content: string
-  image?: string
-  timestamp: string
-  likes: number
-  likedBy: any[]
-  comments: any[]
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  content: string;
+  image?: string;
+  timestamp: string;
+  likes: number;
+  likedBy: any[];
+  comments: any[];
 }
 
+export function Feed({ baseUrl }: FeedProps) {
+  const [newPostContent, setNewPostContent] = useState("");
+  const [posts, setPosts] = useState<PostType[]>([]);
 
-export function Feed({baseUrl}: FeedProps) {
-  const [newPostContent, setNewPostContent] = useState("")
-  const [posts, setPosts] = useState<[]>([])
-  const sampleUsers: User[] = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      username: "sarahj",
-      avatar: "/placeholder.svg?height=100&width=100&text=SJ",
-      isFollowing: true,
-    },
-    {
-      id: 2,
-      name: "Mike Peters",
-      username: "mikepeters",
-      avatar: "/placeholder.svg?height=100&width=100&text=MP",
-      isFollowing: false,
-    },
-    {
-      id: 3,
-      name: "Emma Wilson",
-      username: "emmaw",
-      avatar: "/placeholder.svg?height=100&width=100&text=EW",
-      isFollowing: true,
-    },
-    {
-      id: 4,
-      name: "Alex Morgan",
-      username: "alexm",
-      avatar: "/placeholder.svg?height=100&width=100&text=AM",
-      isFollowing: false,
-    },
-    {
-      id: 5,
-      name: "Taylor Swift",
-      username: "tswift",
-      avatar: "/placeholder.svg?height=100&width=100&text=TS",
-      isFollowing: true,
-    },
-  ]
+
+  const fetchPosts = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("No token found. User might not be authenticated.");
+      return;
+    }
+    try {
+      const response = await axios.get(`${baseUrl}/posts/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setPosts(response.data);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    }
+  };
 
   useEffect(() => {
-    async function fetchPosts() {
-      const token = localStorage.getItem("token")
-      if (!token) {
-        console.warn("No token found. User might not be authenticated.")
-        return
-      }
+    fetchPosts();
+  }, [baseUrl]);
 
-      try {
-        const response = await axios.get(`${baseUrl}/posts/all`, {
+  const handlePostSubmit = async () => {
+    if (!newPostContent.trim()) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("No token found. User might not be authenticated.");
+      return;
+    }
+    try {
+      const response = await axios.post(
+        `${baseUrl}/posts/new`,
+        { content: newPostContent },
+        {
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        })
-        setPosts(response.data)
-      } catch (error) {
-        console.error("Error fetching posts:", error)
-      }
+        }
+      );
+      console.log("New post created:", response.data);
+      setNewPostContent("");
+      fetchPosts();
+    } catch (error) {
+      console.error("Error posting new post:", error);
     }
-    fetchPosts()
-  }, [baseUrl])
-
-  const handlePostSubmit = () => {
-    if (newPostContent.trim()) {
-      console.log("New post:", newPostContent)
-      setNewPostContent("")
-    }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -126,7 +101,8 @@ export function Feed({baseUrl}: FeedProps) {
                 className="min-h-[80px]"
               />
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">{/* Add image, video, etc. buttons here */}</div>
+                <div className="flex items-center gap-2">
+                </div>
                 <Button onClick={handlePostSubmit} disabled={!newPostContent.trim()}>
                   Post
                 </Button>
@@ -142,6 +118,5 @@ export function Feed({baseUrl}: FeedProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }
-

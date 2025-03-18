@@ -31,7 +31,7 @@ export default function HomePage() {
       <Navbar />
       <div className="container mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="hidden md:block">
-          <Sidebar />
+          <Sidebar baseUrl={baseUrl}/>
         </div>
         <div className="md:col-span-2">
           <Feed baseUrl={baseUrl} />

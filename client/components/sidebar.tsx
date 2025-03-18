@@ -1,10 +1,89 @@
-import Link from "next/link"
-import { Home, User, Bookmark, Settings, TrendingUp } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client";
 
-export function Sidebar() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Home, User, Bookmark, Settings, TrendingUp } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface UserData {
+  username: string;
+  avatarUrl?: string;
+}
+
+interface FollowInfo {
+  followers: any[]; 
+  following: any[]; 
+}
+
+export function Sidebar({ baseUrl }: { baseUrl: string }) {
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [followingCount, setFollowingCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem("token");
+      const storedUsername = localStorage.getItem("username");
+      if (!token || !storedUsername) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const resUser = await fetch(`${baseUrl}/users/user/${storedUsername}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (resUser.ok) {
+          const data = await resUser.json();
+          setUserData({
+            username: data.username,
+            avatarUrl: data.avatarUrl || "",
+          });
+        }
+
+        // Fetch follow info from /followInfo/:username
+        const resFollow = await fetch(`${baseUrl}/users/followInfo/${storedUsername}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (resFollow.ok) {
+          const followData: FollowInfo = await resFollow.json();
+          setFollowersCount(Array.isArray(followData.followers) ? followData.followers.length : 0);
+          setFollowingCount(Array.isArray(followData.following) ? followData.following.length : 0);
+        }
+      } catch (error) {
+        console.error("Error fetching sidebar data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [baseUrl]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4 sticky top-20">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="space-y-4 sticky top-20">
+        <p>Error loading user data.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sticky top-20">
       <Card>
@@ -14,31 +93,30 @@ export function Sidebar() {
         <CardContent className="grid gap-4">
           <Link href="/profile" className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src="/placeholder.svg?height=48&width=48" alt="@user" />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarImage src={userData.avatarUrl} alt={`@${userData.username}`} />
+              <AvatarFallback>{userData.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm font-medium">John Doe</p>
-              <p className="text-xs text-muted-foreground">@johndoe</p>
+              <p className="text-sm font-medium">{userData.username}</p>
+              <p className="text-xs text-muted-foreground">@{userData.username}</p>
             </div>
           </Link>
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             <div>
-              <p className="font-medium">254</p>
+              <p className="font-medium">0</p>
               <p className="text-muted-foreground">Posts</p>
             </div>
             <div>
-              <p className="font-medium">1.2K</p>
+              <p className="font-medium">{followersCount}</p>
               <p className="text-muted-foreground">Followers</p>
             </div>
             <div>
-              <p className="font-medium">342</p>
+              <p className="font-medium">{followingCount}</p>
               <p className="text-muted-foreground">Following</p>
             </div>
           </div>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">Navigation</CardTitle>
@@ -118,7 +196,10 @@ export function Sidebar() {
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={`/placeholder.svg?height=32&width=32&text=${i}`} alt="User" />
+                    <AvatarImage
+                      src={`/placeholder.svg?height=32&width=32&text=${i}`}
+                      alt={`User ${i}`}
+                    />
                     <AvatarFallback>U{i}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -135,6 +216,5 @@ export function Sidebar() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

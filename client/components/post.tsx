@@ -196,7 +196,7 @@ export function Post({ post }: PostProps) {
           <Link href="/profile" className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src={post.user.avatar} alt={post.user.name} />
-              <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback>yp</AvatarFallback>
             </Avatar>
             <div>
               <div className="font-semibold">{post.user.name}</div>
@@ -246,7 +246,7 @@ export function Post({ post }: PostProps) {
             <span>{likeCount} likes</span>
           </button>
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
-            <span>{post.comments.length} comments</span>
+            <span> comments</span>
           </div>
         </div>
 
