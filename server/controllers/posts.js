@@ -173,4 +173,15 @@ postsRouter.post("/like/:postId",getToken,async(req,res)=>{
         return res.status(400).send("Server error")
     }
 })
+
+postsRouter.get("/count/:username",async(req,res)=>{
+    try {
+        const username = req.params.username;
+        const posts = await Post.findAndCountAll({where:{username}});
+        return res.status(200).json({"count":posts.count});
+    } catch (error) {
+        console.log(error);
+    }
+})
+
 module.exports = postsRouter

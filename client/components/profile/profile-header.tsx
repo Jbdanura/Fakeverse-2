@@ -1,60 +1,127 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Calendar, LinkIcon, MapPin, MessageSquare, MoreHorizontal, UserPlus } from "lucide-react"
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Calendar, LinkIcon, MapPin, MessageSquare, MoreHorizontal, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { FollowersDialog } from "@/components/profile/followers-dialog"
+} from "@/components/ui/dropdown-menu";
+import { FollowersDialog } from "@/components/profile/followers-dialog";
 
-export function ProfileHeader() {
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [showFollowersDialog, setShowFollowersDialog] = useState(false)
-  const [dialogType, setDialogType] = useState<"followers" | "following">("followers")
+interface UserProfile {
+  name: string;
+  username: string;
+  bio: string;
+  location?: string;
+  website?: string;
+  joinDate: string;
+  coverImage: string;
+  avatar: string;
+  stats: {
+    posts: number;
+    followers: number;
+    following: number;
+  };
+}
+
+interface ProfileHeaderProps {
+  baseUrl: string;
+}
+
+export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [showFollowersDialog, setShowFollowersDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<"followers" | "following">("followers");
 
   const toggleFollow = () => {
-    setIsFollowing(!isFollowing)
-  }
+    setIsFollowing(!isFollowing);
+  };
 
   const openFollowersDialog = () => {
-    setDialogType("followers")
-    setShowFollowersDialog(true)
-  }
+    setDialogType("followers");
+    setShowFollowersDialog(true);
+  };
 
   const openFollowingDialog = () => {
-    setDialogType("following")
-    setShowFollowersDialog(true)
+    setDialogType("following");
+    setShowFollowersDialog(true);
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUsername = localStorage.getItem("username");
+    if (!token || !storedUsername) {
+      setLoading(false);
+      return;
+    }
+    fetch(`${baseUrl}/users/user/${storedUsername}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // If the response is a Sequelize object, use data.dataValues.
+        const profile = data.dataValues ? data.dataValues : data;
+        // Construct a profile with fallbacks
+        const userProfile: UserProfile = {
+          name: profile.name || profile.username, // Use username if name is missing.
+          username: profile.username,
+          bio: profile.bio || "No bio provided.",
+          location: profile.location || "",
+          website: profile.website || "",
+          joinDate: profile.joinDate || "Joined date unknown",
+          coverImage: profile.coverImage || "/placeholder.svg?height=400&width=1200",
+          avatar: profile.avatar || "/placeholder.svg?height=150&width=150",
+          stats: {
+            posts: profile.posts ? profile.posts.length : 0,
+            followers: profile.followers || 0,
+            following: profile.following || 0,
+          },
+        };
+        setUser(userProfile);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+        setLoading(false);
+      });
+  }, [baseUrl]);
+
+  if (loading) {
+    return <div className="mb-6">Loading profile...</div>;
+  }
+  if (!user) {
+    return <div className="mb-6">Error loading profile.</div>;
   }
 
-  // Mock user data
-  const user = {
-    name: "John Doe",
-    username: "johndoe",
-    bio: "Photographer, traveler, and coffee enthusiast. Sharing my adventures and creative work.",
-    location: "San Francisco, CA",
-    website: "johndoe.com",
-    joinDate: "Joined January 2020",
-    coverImage: "/placeholder.svg?height=400&width=1200",
-    avatar: "/placeholder.svg?height=150&width=150",
-    stats: {
-      posts: 254,
-      followers: 1243,
-      following: 342,
-    },
-  }
+  // Function to compute initials from name.
+  const getAvatarInitials = () => {
+    const names = user.name.split(" ");
+    return names.length > 1 ? names[0].charAt(0) + names[1].charAt(0) : names[0].charAt(0);
+  };
 
   return (
     <div className="mb-6">
       {/* Cover Photo */}
       <div className="relative w-full h-[200px] md:h-[300px] rounded-t-xl overflow-hidden">
-        <Image src={user.coverImage || "/placeholder.svg"} alt="Cover photo" fill className="object-cover" priority />
+        <Image
+          src={user.coverImage}
+          alt="Cover photo"
+          fill
+          className="object-cover"
+          priority
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
       </div>
 
@@ -65,14 +132,11 @@ export function ProfileHeader() {
             {/* Avatar */}
             <Avatar className="h-32 w-32 border-4 border-background">
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>
-                {user.name.charAt(0)}
-                {user.name.split(" ")[1]?.charAt(0)}
-              </AvatarFallback>
+              <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
             </Avatar>
 
             {/* User Info */}
-            <div className="mt-2 md:mt-0 md:mb-2">
+            <div className="mt-2 md:mt-0 md:mb-2" style={{transform:"translateY(-15px)"}}>
               <h1 className="text-2xl font-bold">{user.name}</h1>
               <p className="text-muted-foreground">@{user.username}</p>
             </div>
@@ -114,7 +178,6 @@ export function ProfileHeader() {
         {/* Bio */}
         <div className="mt-4 max-w-2xl">
           <p>{user.bio}</p>
-
           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-muted-foreground">
             {user.location && (
               <div className="flex items-center">
@@ -161,6 +224,5 @@ export function ProfileHeader() {
       {/* Followers/Following Dialog */}
       <FollowersDialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog} type={dialogType} />
     </div>
-  )
+  );
 }
-

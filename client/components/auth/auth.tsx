@@ -76,6 +76,7 @@ export default function Auth({ baseUrl }: AuthProps) {
         showMessage(formatErrorMessage(data || "Login failed"), "error");
       } else {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("username",data.username);
         showMessage("Login successful!", "success", true);
       }
     } catch (error) {
@@ -92,7 +93,7 @@ export default function Auth({ baseUrl }: AuthProps) {
     const password = formData.get("password") as string;
 
     try {
-      const res = await fetch("http://localhost:5000/register", {
+      const res = await fetch(`${baseUrl}/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),

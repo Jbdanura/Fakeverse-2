@@ -32,7 +32,6 @@ export function Feed({ baseUrl }: FeedProps) {
   const [newPostContent, setNewPostContent] = useState("");
   const [posts, setPosts] = useState<PostType[]>([]);
 
-
   const fetchPosts = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -50,6 +49,8 @@ export function Feed({ baseUrl }: FeedProps) {
       console.error("Error fetching posts:", error);
     }
   };
+
+
 
   useEffect(() => {
     fetchPosts();
@@ -80,6 +81,10 @@ export function Feed({ baseUrl }: FeedProps) {
     } catch (error) {
       console.error("Error posting new post:", error);
     }
+  };
+
+  const handleDeletePost = (postId: number) => {
+    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
   };
 
   return (
@@ -114,7 +119,7 @@ export function Feed({ baseUrl }: FeedProps) {
 
       <div className="space-y-4">
         {posts.map((post: PostType) => (
-          <Post key={post.id} post={post} />
+          <Post key={post.id} post={post} baseUrl={baseUrl} onDelete={handleDeletePost}/>
         ))}
       </div>
     </div>

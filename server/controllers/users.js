@@ -59,6 +59,7 @@ usersRouter.get("/user/:username",async(req,res)=>{
         const username = req.params.username.toLowerCase()
         const user = await User.findOne({where:{username},attributes:["username","id"],
         include:[{model:Post,include:[{model:Like,include:{model:User,attributes:["username"]}},{model:Comment,include:{model:User,attributes:["username"]}}]}],order: [[Post, "createdAt", "DESC"]],})
+        console.log(user)
         return res.status(200).send(user)
     } catch (error) {
         return res.status(400).send(error)
@@ -67,7 +68,7 @@ usersRouter.get("/user/:username",async(req,res)=>{
 
 usersRouter.get("/recommended",async(req,res)=>{
     try {
-        const users = await User.findAll({limit: 15,attributes:["username","id"]})
+        const users = await User.findAll({limit: 3,attributes:["username","id"]})
         return res.status(200).send(users)
     } catch (error) {
         return res.status(400).send(error) 

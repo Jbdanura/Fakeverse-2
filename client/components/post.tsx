@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -53,10 +53,12 @@ interface PostProps {
     likes: number
     comments: Comment[]
     likedBy?: User[]
-  }
+  },
+  baseUrl: string,
+  onDelete: (postId: number) => void;
 }
 
-export function Post({ post }: PostProps) {
+export function Post({ post,baseUrl,onDelete }: PostProps) {
   const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
@@ -65,6 +67,7 @@ export function Post({ post }: PostProps) {
   const [showLikesDialog, setShowLikesDialog] = useState(false)
   const [showCommentLikesDialog, setShowCommentLikesDialog] = useState(false)
   const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null)
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
   // Sample users who liked the post
   const [likedByUsers] = useState<User[]>(
@@ -189,14 +192,50 @@ export function Post({ post }: PostProps) {
     return commentLikedByUsers[selectedCommentId] || []
   }
 
+  const deletePost = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${baseUrl}/posts/${post.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        setDeleteMessage("Post deleted");
+        setTimeout(() => {
+          onDelete(post.id);
+        }, 2000);
+      } else {
+        setDeleteMessage("Failed to delete post");
+        setTimeout(() => {
+          setDeleteMessage(null);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      setDeleteMessage("Failed to delete post");
+      setTimeout(() => {
+        setDeleteMessage(null);
+      }, 2000);
+    }
+  };
+
   return (
-    <Card>
+    
+    <Card className="relative">
+      {deleteMessage && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-lg font-bold z-10">
+          {deleteMessage}
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <Link href="/profile" className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src={post.user.avatar} alt={post.user.name} />
-              <AvatarFallback>yp</AvatarFallback>
+              <AvatarFallback>{post.user.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
               <div className="font-semibold">{post.user.name}</div>
@@ -205,21 +244,18 @@ export function Post({ post }: PostProps) {
               </div>
             </div>
           </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">More options</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Save post</DropdownMenuItem>
-              <DropdownMenuItem>Hide post</DropdownMenuItem>
-              <DropdownMenuItem>Follow {post.user.name}</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Report post</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {localStorage.getItem("username") == post.user.username ?
+              <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="text-destructive" onClick={deletePost}>Delete post</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu> : null}
         </div>
       </CardHeader>
       <CardContent className="pb-3">
