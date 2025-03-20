@@ -71,11 +71,9 @@ export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
     })
       .then((res) => res.json())
       .then((data) => {
-        // If the response is a Sequelize object, use data.dataValues.
         const profile = data.dataValues ? data.dataValues : data;
-        // Construct a profile with fallbacks
         const userProfile: UserProfile = {
-          name: profile.name || profile.username, // Use username if name is missing.
+          name: profile.name || profile.username, 
           username: profile.username,
           bio: profile.bio || "No bio provided.",
           location: profile.location || "",
@@ -105,7 +103,6 @@ export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
     return <div className="mb-6">Error loading profile.</div>;
   }
 
-  // Function to compute initials from name.
   const getAvatarInitials = () => {
     const names = user.name.split(" ");
     return names.length > 1 ? names[0].charAt(0) + names[1].charAt(0) : names[0].charAt(0);

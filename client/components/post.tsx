@@ -1,73 +1,75 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { BookmarkIcon, Heart, MessageCircle, MoreHorizontal, Send, Share2 } from "lucide-react"
-import Link from "next/link"
-import { LikesDialog } from "@/components/likes-dialog"
+} from "@/components/ui/dropdown-menu";
+import { BookmarkIcon, Heart, MessageCircle, MoreHorizontal, Send, Share2 } from "lucide-react";
+import Link from "next/link";
+import { LikesDialog } from "@/components/likes-dialog";
 
 interface User {
-  id: number
-  name: string
-  username: string
-  avatar: string
-  isFollowing: boolean
+  id: number;
+  name: string;
+  username: string;
+  avatar: string;
+  isFollowing: boolean;
 }
 
 interface Comment {
-  id: number
+  id: number;
   user: {
-    name: string
-    username: string
-    avatar: string
-  }
-  content: string
-  timestamp: string
-  likes: number
-  likedBy?: User[]
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  description: string;
+  timestamp: string;
+  likes: number;
+  likedBy?: User[];
 }
 
 interface PostProps {
   post: {
-    id: number
+    id: number;
     user: {
-      name: string
-      username: string
-      avatar: string
-    }
-    content: string
-    image?: string
-    timestamp: string
-    likes: number
-    comments: Comment[]
-    likedBy?: User[]
-  },
-  baseUrl: string,
+      name: string;
+      username: string;
+      avatar: string;
+    };
+    content: string;
+    image?: string;
+    timestamp: string;
+    likes: number;
+    Comments: Comment[];
+    likedBy?: User[];
+  };
+  baseUrl: string;
   onDelete: (postId: number) => void;
 }
 
-export function Post({ post,baseUrl,onDelete }: PostProps) {
-  const [liked, setLiked] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [showComments, setShowComments] = useState(false)
-  const [commentText, setCommentText] = useState("")
-  const [likeCount, setLikeCount] = useState(post.likes)
-  const [showLikesDialog, setShowLikesDialog] = useState(false)
-  const [showCommentLikesDialog, setShowCommentLikesDialog] = useState(false)
-  const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null)
+export function Post({ post, baseUrl, onDelete }: PostProps) {
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [likeCount, setLikeCount] = useState(post.likes);
+  const [showLikesDialog, setShowLikesDialog] = useState(false);
+  const [showCommentLikesDialog, setShowCommentLikesDialog] = useState(false);
+  const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+  // Use local state for comments so we can update them on new submission.
+  const [comments, setComments] = useState<Comment[]>(post.Comments);
 
   // Sample users who liked the post
   const [likedByUsers] = useState<User[]>(
@@ -107,8 +109,8 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
         avatar: "/placeholder.svg?height=100&width=100&text=TS",
         isFollowing: true,
       },
-    ],
-  )
+    ]
+  );
 
   // Sample users who liked comments
   const [commentLikedByUsers] = useState<Record<number, User[]>>({
@@ -145,52 +147,71 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
       },
       {
         id: 4,
-        name: "Alex Morgan",
-        username: "alexm",
+        name: "Arthur Morgan",
+        username: "arthurm",
         avatar: "/placeholder.svg?height=100&width=100&text=AM",
         isFollowing: false,
       },
     ],
-  })
+  });
 
   const handleLike = () => {
     if (liked) {
-      setLikeCount(likeCount - 1)
+      setLikeCount(likeCount - 1);
     } else {
-      setLikeCount(likeCount + 1)
+      setLikeCount(likeCount + 1);
     }
-    setLiked(!liked)
-  }
+    setLiked(!liked);
+  };
 
   const handleSave = () => {
-    setSaved(!saved)
-  }
+    setSaved(!saved);
+  };
 
   const handleComment = () => {
-    setShowComments(!showComments)
-  }
+    setShowComments(!showComments);
+  };
 
-  const submitComment = () => {
-    if (commentText.trim()) {
-      // In a real app, you would add the comment to your state or send to an API
-      console.log("New comment:", commentText)
-      setCommentText("")
+  // New: Submit comment via API and update local comments state.
+  const submitComment = async () => {
+    if (!commentText.trim()) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${baseUrl}/posts/comment/${post.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ description: commentText.trim() }),
+      });
+      if (res.ok) {
+        const newComment: Comment = await res.json();
+        // Append new comment to local comments state.
+        setComments((prevComments) => [...prevComments, newComment]);
+        setCommentText("");
+      } else {
+        console.error("Failed to post comment");
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
     }
-  }
+  };
 
   const openLikesDialog = () => {
-    setShowLikesDialog(true)
-  }
+    setShowLikesDialog(true);
+  };
 
   const openCommentLikesDialog = (commentId: number) => {
-    setSelectedCommentId(commentId)
-    setShowCommentLikesDialog(true)
-  }
+    setSelectedCommentId(commentId);
+    setShowCommentLikesDialog(true);
+  };
 
   const getSelectedCommentLikes = (): User[] => {
-    if (!selectedCommentId) return []
-    return commentLikedByUsers[selectedCommentId] || []
-  }
+    if (!selectedCommentId) return [];
+    return commentLikedByUsers[selectedCommentId] || [];
+  };
 
   const deletePost = async () => {
     const token = localStorage.getItem("token");
@@ -221,9 +242,8 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
       }, 2000);
     }
   };
-
+  console.log(comments)
   return (
-    
     <Card className="relative">
       {deleteMessage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-lg font-bold z-10">
@@ -244,8 +264,8 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
               </div>
             </div>
           </Link>
-          {localStorage.getItem("username") == post.user.username ?
-              <DropdownMenu>
+          {localStorage.getItem("username") === post.user.username && (
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <MoreHorizontal className="h-4 w-4" />
@@ -253,9 +273,12 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-destructive" onClick={deletePost}>Delete post</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={deletePost}>
+                  Delete post
+                </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu> : null}
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
       <CardContent className="pb-3">
@@ -278,11 +301,11 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
             className="flex items-center gap-1 text-muted-foreground text-sm hover:underline"
             onClick={openLikesDialog}
           >
-            <Heart className="h-4 w-4 fill-primary text-primary" />
+            <Heart className={`h-4 w-4 ${liked ? "fill-primary text-primary" : ""}`} />
             <span>{likeCount} likes</span>
           </button>
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
-            <span> comments</span>
+            <span>{comments.length} comments</span>
           </div>
         </div>
 
@@ -325,36 +348,32 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
         {showComments && (
           <div className="w-full mt-3 space-y-3">
             <Separator />
-
-            {post.comments.map((comment) => (
+            {comments.map((comment) => {
+            // Use optional chaining and fallback for display name.
+            const commentDisplayName = comment.user?.name || comment.user?.username || localStorage.getItem("username");
+            const commentAvatarInitial = comment.user?.username ? comment.user.username.charAt(0).toUpperCase() : "U";
+            return (
               <div key={comment.id} className="flex items-start gap-2 pt-3">
                 <Link href="/profile">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.user.avatar} alt={comment.user.name} />
-                    <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={comment.user?.avatar || "/placeholder.svg"} alt={commentDisplayName} />
+                    <AvatarFallback>{commentAvatarInitial}</AvatarFallback>
                   </Avatar>
                 </Link>
                 <div className="flex-1">
                   <div className="bg-muted p-2 rounded-md">
                     <Link href="/profile" className="font-semibold text-sm">
-                      {comment.user.name}
+                      {commentDisplayName}
                     </Link>
-                    <p className="text-sm">{comment.content}</p>
+                    <p className="text-sm">{comment.description}</p>
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <button className="hover:text-foreground">Like</button>
-                    <button className="hover:text-foreground">Reply</button>
-                    <button
-                      className="hover:text-foreground hover:underline"
-                      onClick={() => openCommentLikesDialog(comment.id)}
-                    >
-                      {comment.likes} likes
-                    </button>
                     <span>{comment.timestamp}</span>
                   </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
 
             <div className="flex items-center gap-2 pt-3">
               <Avatar className="h-8 w-8">
@@ -389,6 +408,5 @@ export function Post({ post,baseUrl,onDelete }: PostProps) {
         users={getSelectedCommentLikes()}
       />
     </Card>
-  )
+  );
 }
-

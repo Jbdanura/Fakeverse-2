@@ -25,7 +25,7 @@ export interface PostType {
   timestamp: string;
   likes: number;
   likedBy: any[];
-  comments: any[];
+  Comments: any[];
 }
 
 export function Feed({ baseUrl }: FeedProps) {
