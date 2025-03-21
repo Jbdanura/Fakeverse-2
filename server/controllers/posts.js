@@ -121,6 +121,7 @@ postsRouter.delete("/:postId",getToken,async(req,res)=>{
         return res.status(400).send("Server error")
     }
 })
+
 postsRouter.delete("/comment/:commentId",getToken,async(req,res)=>{
     try {
         const user = req.user
@@ -137,6 +138,7 @@ postsRouter.delete("/comment/:commentId",getToken,async(req,res)=>{
         return res.status(400).send("Server error")
     }
 })
+
 postsRouter.post("/comment/:postId",getToken,async(req,res)=>{
     try {
         const user = req.user

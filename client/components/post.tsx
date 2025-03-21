@@ -29,14 +29,13 @@ interface User {
 interface Comment {
   id: number;
   user: {
-    name: string;
     username: string;
-    avatar: string;
   };
   description: string;
-  timestamp: string;
-  likes: number;
-  likedBy?: User[];
+  createdAt: string;
+  updatedAt: string;
+  userId: number;
+  postId: number;
 }
 
 interface PostProps {
@@ -172,7 +171,6 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
     setShowComments(!showComments);
   };
 
-  // New: Submit comment via API and update local comments state.
   const submitComment = async () => {
     if (!commentText.trim()) return;
     const token = localStorage.getItem("token");
@@ -188,7 +186,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
       });
       if (res.ok) {
         const newComment: Comment = await res.json();
-        // Append new comment to local comments state.
+        newComment.user = { username: localStorage.getItem("username") || "Unknown" };
         setComments((prevComments) => [...prevComments, newComment]);
         setCommentText("");
       } else {
@@ -242,7 +240,27 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
       }, 2000);
     }
   };
-  console.log(comments)
+
+  const deleteComment = async (commentId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${baseUrl}/posts/comment/${commentId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      } else {
+        console.error("Failed to delete comment");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
   return (
     <Card className="relative">
       {deleteMessage && (
@@ -305,13 +323,13 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
             <span>{likeCount} likes</span>
           </button>
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
-            <span>{comments.length} comments</span>
+            <span onClick={handleComment}>{comments.length} comments</span>
           </div>
         </div>
 
         <Separator className="my-3" />
 
-        <div className="flex items-center justify-between w-full">
+        <div className="flex items-center justify-around w-full">
           <Button
             variant="ghost"
             size="sm"
@@ -330,45 +348,46 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
             <MessageCircle className="h-4 w-4" />
             Comment
           </Button>
-          <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground">
-            <Share2 className="h-4 w-4" />
-            Share
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1 text-muted-foreground"
-            onClick={handleSave}
-          >
-            <BookmarkIcon className={`h-4 w-4 ${saved ? "fill-primary text-primary" : ""}`} />
-            Save
-          </Button>
         </div>
 
         {showComments && (
           <div className="w-full mt-3 space-y-3">
             <Separator />
             {comments.map((comment) => {
-            // Use optional chaining and fallback for display name.
-            const commentDisplayName = comment.user?.name || comment.user?.username || localStorage.getItem("username");
-            const commentAvatarInitial = comment.user?.username ? comment.user.username.charAt(0).toUpperCase() : "U";
+            const commentDisplayName =
+              comment.user?.username || localStorage.getItem("username") || "Unknown";
+            const commentAvatarInitial = comment.user?.username
+              ? comment.user.username.charAt(0).toUpperCase()
+              : "U";
             return (
-              <div key={comment.id} className="flex items-start gap-2 pt-3">
+              <div key={comment.id} className="flex items-start gap-2 pt-3 relative">
                 <Link href="/profile">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.user?.avatar || "/placeholder.svg"} alt={commentDisplayName} />
+                    <AvatarImage
+                      src={"/placeholder.svg"}
+                      alt={commentDisplayName}
+                    />
                     <AvatarFallback>{commentAvatarInitial}</AvatarFallback>
                   </Avatar>
                 </Link>
                 <div className="flex-1">
-                  <div className="bg-muted p-2 rounded-md">
+                  <div className="bg-muted p-2 rounded-md relative">
+
+                    {localStorage.getItem("username") === comment.user?.username && (
+                      <button
+                        onClick={() => deleteComment(comment.id)}
+                        className="absolute top-1 right-1 text-xs text-red-500 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    )}
                     <Link href="/profile" className="font-semibold text-sm">
                       {commentDisplayName}
                     </Link>
                     <p className="text-sm">{comment.description}</p>
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <span>{comment.timestamp}</span>
+                    <span>{comment.createdAt.slice(0, 10)}</span>
                   </div>
                 </div>
               </div>

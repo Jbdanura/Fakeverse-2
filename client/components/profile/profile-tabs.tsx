@@ -18,17 +18,14 @@ export function ProfileTabs({ defaultTab = "posts" }: ProfileTabsProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Update URL when tab changes
   const handleTabChange = (value: string) => {
     setActiveTab(value)
 
-    // Update the URL with the new tab
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", value)
     router.push(`/profile?${params.toString()}`, { scroll: false })
   }
 
-  // Sync with URL parameters if they change externally
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab")
     if (tabFromUrl && tabFromUrl !== activeTab) {

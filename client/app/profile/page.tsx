@@ -3,9 +3,8 @@ import { ProfileHeader } from "@/components/profile/profile-header"
 import { ProfileTabs } from "@/components/profile/profile-tabs"
 
 export default function ProfilePage({ searchParams }: { searchParams: { tab?: string } }) {
-  // Get the active tab from URL query parameters
   const activeTab = searchParams.tab || "posts"
-  const baseUrl = "http://localhost:5000"  // Define your baseUrl
+  const baseUrl = "http://localhost:5000"  
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
