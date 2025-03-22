@@ -32,9 +32,10 @@ interface UserProfile {
 
 interface ProfileHeaderProps {
   baseUrl: string;
+  username: string;
 }
 
-export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
+export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -57,12 +58,11 @@ export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const storedUsername = localStorage.getItem("username");
-    if (!token || !storedUsername) {
+    if (!token || !username) {
       setLoading(false);
       return;
     }
-    fetch(`${baseUrl}/users/user/${storedUsername}`, {
+    fetch(`${baseUrl}/users/user/${username}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -71,9 +71,10 @@ export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
     })
       .then((res) => res.json())
       .then((data) => {
+        // Check if data contains dataValues (Sequelize response)
         const profile = data.dataValues ? data.dataValues : data;
         const userProfile: UserProfile = {
-          name: profile.name || profile.username, 
+          name: profile.name || profile.username,
           username: profile.username,
           bio: profile.bio || "No bio provided.",
           location: profile.location || "",
@@ -94,7 +95,7 @@ export function ProfileHeader({ baseUrl }: ProfileHeaderProps) {
         console.error("Error fetching profile:", err);
         setLoading(false);
       });
-  }, [baseUrl]);
+  }, [baseUrl, username]);
 
   if (loading) {
     return <div className="mb-6">Loading profile...</div>;

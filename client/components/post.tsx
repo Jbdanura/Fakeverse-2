@@ -270,7 +270,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
       )}
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <Link href="/profile" className="flex items-center gap-3">
+          <Link href={`/profile/${post.user.username}`} className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src={post.user.avatar} alt={post.user.name} />
               <AvatarFallback>{post.user.username.charAt(0).toUpperCase()}</AvatarFallback>
@@ -361,7 +361,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
               : "U";
             return (
               <div key={comment.id} className="flex items-start gap-2 pt-3 relative">
-                <Link href="/profile">
+                <Link href={`/profile/${comment.user.username}`}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={"/placeholder.svg"}
@@ -381,7 +381,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
                         Delete
                       </button>
                     )}
-                    <Link href="/profile" className="font-semibold text-sm">
+                    <Link href={`/profile/${comment.user.username}`} className="font-semibold text-sm">
                       {commentDisplayName}
                     </Link>
                     <p className="text-sm">{comment.description}</p>

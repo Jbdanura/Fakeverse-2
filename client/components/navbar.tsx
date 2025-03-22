@@ -53,7 +53,7 @@ export function Navbar() {
                   Messages
                 </Link>
                 <Link
-                  href="/profile"
+                  href={`/profile/${localStorage.getItem("username")}`}
                   className="flex items-center gap-2 text-sm font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -127,18 +127,13 @@ export function Navbar() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="w-full cursor-pointer">
+                <Link href={`/profile/${localStorage.getItem("username")}`} className="w-full cursor-pointer">
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/settings" className="w-full cursor-pointer">
                   Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/profile?tab=saved" className="w-full cursor-pointer">
-                  Saved Posts
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

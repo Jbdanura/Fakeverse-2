@@ -1,17 +1,26 @@
+'use client'
+
 import { Navbar } from "@/components/navbar"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { ProfileTabs } from "@/components/profile/profile-tabs"
+import { useParams } from 'next/navigation';
+
 
 export default function ProfilePage({ searchParams }: { searchParams: { tab?: string } }) {
-  const activeTab = searchParams.tab || "posts"
+  const activeTab = "posts"
   const baseUrl = "http://localhost:5000"  
+
+  const params = useParams();
+  const username = Array.isArray(params.username)
+    ? params.username[0]
+    : params.username || "";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <div className="container mx-auto px-4 py-6">
-        <ProfileHeader baseUrl={baseUrl} />
-        <ProfileTabs defaultTab={activeTab} />
+        <ProfileHeader username={username} baseUrl={baseUrl} />
+        <ProfileTabs  username={username} defaultTab={activeTab} />
       </div>
     </div>
   )

@@ -11,9 +11,10 @@ import { ProfileSaved } from "@/components/profile/profile-saved"
 
 interface ProfileTabsProps {
   defaultTab?: string
+  username: string;
 }
 
-export function ProfileTabs({ defaultTab = "posts" }: ProfileTabsProps) {
+export function ProfileTabs({ username,defaultTab = "posts" }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState(defaultTab)
   const router = useRouter()
   const searchParams = useSearchParams()
