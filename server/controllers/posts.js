@@ -165,10 +165,14 @@ postsRouter.post("/like/:postId",getToken,async(req,res)=>{
         const existsLike = await Like.findOne({where:{postId:post.id,userId:user.id}})
         if(existsLike){
             await existsLike.destroy()
-            return res.status(200).send(`Unliked post ${post.id}`)
+            return res.status(200).json(`Unliked post ${post.id}`)
         } else {
             const newLike = await Like.create({userId: user.id,postId:post.id})
-            return res.status(200).send(newLike)
+            const likeWithUser = {
+                ...newLike.dataValues,
+                user: { username: user.username },
+              };
+            return res.status(200).json(likeWithUser)
         }
     } catch (error) {
         console.log(error)

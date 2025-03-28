@@ -38,6 +38,17 @@ interface Comment {
   postId: number;
 }
 
+interface Like{
+  createdAt: string;
+  updatedAt: string;
+  id: number;
+  postId: number;
+  userId: number;
+  user:{
+    username: string;
+  }
+}
+
 interface PostProps {
   post: {
     id: number;
@@ -49,7 +60,7 @@ interface PostProps {
     content: string;
     image?: string;
     timestamp: string;
-    likes: number;
+    Likes: Like[];
     Comments: Comment[];
     likedBy?: User[];
   };
@@ -58,110 +69,53 @@ interface PostProps {
 }
 
 export function Post({ post, baseUrl, onDelete }: PostProps) {
-  const [liked, setLiked] = useState(false);
+  const loggedInUsername = localStorage.getItem("username");
+  const initialLiked =
+    post.Likes && loggedInUsername
+      ? post.Likes.some((like: any) => like.user.username === loggedInUsername)
+      : false;
+  const [liked, setLiked] = useState(initialLiked);
   const [saved, setSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [likeCount, setLikeCount] = useState(post.likes);
+  const [likeCount, setLikeCount] = useState(post.Likes.length);
   const [showLikesDialog, setShowLikesDialog] = useState(false);
   const [showCommentLikesDialog, setShowCommentLikesDialog] = useState(false);
   const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
-  // Use local state for comments so we can update them on new submission.
   const [comments, setComments] = useState<Comment[]>(post.Comments);
+  const [likedByUsers, setLikedByUsers] = useState(post.Likes);
 
-  // Sample users who liked the post
-  const [likedByUsers] = useState<User[]>(
-    post.likedBy || [
-      {
-        id: 1,
-        name: "Sarah Johnson",
-        username: "sarahj",
-        avatar: "/placeholder.svg?height=100&width=100&text=SJ",
-        isFollowing: true,
-      },
-      {
-        id: 2,
-        name: "Mike Peters",
-        username: "mikepeters",
-        avatar: "/placeholder.svg?height=100&width=100&text=MP",
-        isFollowing: false,
-      },
-      {
-        id: 3,
-        name: "Emma Wilson",
-        username: "emmaw",
-        avatar: "/placeholder.svg?height=100&width=100&text=EW",
-        isFollowing: true,
-      },
-      {
-        id: 4,
-        name: "Alex Morgan",
-        username: "alexm",
-        avatar: "/placeholder.svg?height=100&width=100&text=AM",
-        isFollowing: false,
-      },
-      {
-        id: 5,
-        name: "Taylor Swift",
-        username: "tswift",
-        avatar: "/placeholder.svg?height=100&width=100&text=TS",
-        isFollowing: true,
-      },
-    ]
-  );
 
-  // Sample users who liked comments
-  const [commentLikedByUsers] = useState<Record<number, User[]>>({
-    1: [
-      {
-        id: 1,
-        name: "Sarah Johnson",
-        username: "sarahj",
-        avatar: "/placeholder.svg?height=100&width=100&text=SJ",
-        isFollowing: true,
-      },
-      {
-        id: 3,
-        name: "Emma Wilson",
-        username: "emmaw",
-        avatar: "/placeholder.svg?height=100&width=100&text=EW",
-        isFollowing: true,
-      },
-      {
-        id: 5,
-        name: "Taylor Swift",
-        username: "tswift",
-        avatar: "/placeholder.svg?height=100&width=100&text=TS",
-        isFollowing: true,
-      },
-    ],
-    2: [
-      {
-        id: 2,
-        name: "Mike Peters",
-        username: "mikepeters",
-        avatar: "/placeholder.svg?height=100&width=100&text=MP",
-        isFollowing: false,
-      },
-      {
-        id: 4,
-        name: "Arthur Morgan",
-        username: "arthurm",
-        avatar: "/placeholder.svg?height=100&width=100&text=AM",
-        isFollowing: false,
-      },
-    ],
-  });
-
-  const handleLike = () => {
-    if (liked) {
-      setLikeCount(likeCount - 1);
-    } else {
-      setLikeCount(likeCount + 1);
+  const handleLike = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${baseUrl}/posts/like/${post.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json()
+        if (liked) {
+          setLikeCount(likeCount - 1);
+          setLikedByUsers((likedByUsers) => likedByUsers.filter((like) => like.user.username !== loggedInUsername));
+        } else {
+          setLikeCount(likeCount + 1);
+          setLikedByUsers([...likedByUsers, data])
+        }
+      } else {
+        console.error("Failed to like post"); 
+      }
+    } catch (error) {
+      console.error("Error liking post:", error);
     }
     setLiked(!liked);
-  };
+  }
+  
 
   const handleSave = () => {
     setSaved(!saved);
@@ -201,15 +155,6 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
     setShowLikesDialog(true);
   };
 
-  const openCommentLikesDialog = (commentId: number) => {
-    setSelectedCommentId(commentId);
-    setShowCommentLikesDialog(true);
-  };
-
-  const getSelectedCommentLikes = (): User[] => {
-    if (!selectedCommentId) return [];
-    return commentLikedByUsers[selectedCommentId] || [];
-  };
 
   const deletePost = async () => {
     const token = localStorage.getItem("token");
@@ -417,15 +362,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
       </CardFooter>
 
       {/* Post Likes Dialog */}
-      <LikesDialog open={showLikesDialog} onOpenChange={setShowLikesDialog} title="Likes" users={likedByUsers} />
-
-      {/* Comment Likes Dialog */}
-      <LikesDialog
-        open={showCommentLikesDialog}
-        onOpenChange={setShowCommentLikesDialog}
-        title="Comment Likes"
-        users={getSelectedCommentLikes()}
-      />
+      <LikesDialog open={showLikesDialog} onOpenChange={setShowLikesDialog} title="Likes" likes={likedByUsers} />
     </Card>
   );
 }
