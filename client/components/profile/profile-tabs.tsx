@@ -10,11 +10,12 @@ import { ProfilePhotos } from "@/components/profile/profile-photos"
 import { ProfileSaved } from "@/components/profile/profile-saved"
 
 interface ProfileTabsProps {
+  baseUrl: string,
   defaultTab?: string
   username: string;
 }
 
-export function ProfileTabs({ username,defaultTab = "posts" }: ProfileTabsProps) {
+export function ProfileTabs({ baseUrl, username,defaultTab = "posts" }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState(defaultTab)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -39,7 +40,9 @@ export function ProfileTabs({ username,defaultTab = "posts" }: ProfileTabsProps)
       <TabsList className="grid grid-cols-1 w-full max-w-3xl">
         <TabsTrigger value="posts">Posts</TabsTrigger>
       </TabsList>
-
+      <TabsContent value="posts" className="mt-6">
+         <ProfilePosts baseUrl={baseUrl} username={username}/>
+       </TabsContent>
     </Tabs>
   )
 }

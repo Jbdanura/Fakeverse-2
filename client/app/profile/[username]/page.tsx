@@ -20,7 +20,7 @@ export default function ProfilePage({ searchParams }: { searchParams: { tab?: st
       <Navbar />
       <div className="container mx-auto px-4 py-6">
         <ProfileHeader username={username} baseUrl={baseUrl} />
-        <ProfileTabs  username={username} defaultTab={activeTab} />
+        <ProfileTabs  baseUrl={baseUrl} username={username} defaultTab={activeTab} />
       </div>
     </div>
   )

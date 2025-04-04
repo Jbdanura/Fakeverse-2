@@ -52,6 +52,7 @@ interface Like{
 interface PostProps {
   post: {
     id: number;
+    username:string,
     user: {
       name: string;
       username: string;
@@ -215,19 +216,19 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
       )}
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <Link href={`/profile/${post.user.username}`} className="flex items-center gap-3">
+          <Link href={`/profile/${post.username}`} className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={post.user.avatar} alt={post.user.name} />
-              <AvatarFallback>{post.user.username.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage alt={post.username} />
+              <AvatarFallback>{post.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
-              <div className="font-semibold">{post.user.name}</div>
+              <div className="font-semibold">{post.username}</div>
               <div className="text-xs text-muted-foreground">
-                @{post.user.username} · {post.timestamp}
+                @{post.username} · {post.timestamp}
               </div>
             </div>
           </Link>
-          {localStorage.getItem("username") === post.user.username && (
+          {localStorage.getItem("username") === post.username && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">

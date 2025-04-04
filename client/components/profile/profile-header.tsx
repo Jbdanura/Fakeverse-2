@@ -71,7 +71,6 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
     })
       .then((res) => res.json())
       .then((data) => {
-        // Check if data contains dataValues (Sequelize response)
         const profile = data.dataValues ? data.dataValues : data;
         const userProfile: UserProfile = {
           name: profile.name || profile.username,
