@@ -162,13 +162,6 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
               Profile
             </Link>
             <Link
-              href={`/profile/${userData.username}`}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent"
-            >
-              <Bookmark className="h-4 w-4" />
-              Saved
-            </Link>
-            <Link
               href="/settings"
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent"
             >
@@ -181,7 +174,7 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Suggested Friends</CardTitle>
+          <CardTitle className="text-sm font-medium">Suggested People</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

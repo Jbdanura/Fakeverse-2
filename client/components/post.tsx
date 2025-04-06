@@ -207,6 +207,12 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      submitComment();
+    }
+  };
+
   return (
     <Card className="relative">
       {deleteMessage && (
@@ -351,6 +357,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   className="flex-1"
+                  onKeyDown={handleKeyDown}
                 />
                 <Button size="icon" variant="ghost" onClick={submitComment} disabled={!commentText.trim()}>
                   <Send className="h-4 w-4" />

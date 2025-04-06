@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Bell, Home, Menu, MessageSquare, Search, Settings, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Bell, Home, Menu, MessageSquare, Search, Settings, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,12 +14,57 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 
 export function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchError, setSearchError] = useState("");
+  const router = useRouter();
+  const baseUrl = "http://localhost:5000"; // adjust as needed
+
+  const handleSearchClick = async () => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${baseUrl}/users/user/${query}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.username) {
+          // Navigate to the dynamic profile page.
+          router.push(`/profile/${data.username}`);
+          setSearchQuery("");
+        } else {
+          setSearchError("User not found");
+          setTimeout(() => setSearchError(""), 2000);
+        }
+      } else {
+        setSearchError("User not found");
+        setTimeout(() => setSearchError(""), 2000);
+      }
+    } catch (error) {
+      console.error("Error searching for user:", error);
+      setSearchError("Error searching for user");
+      setTimeout(() => setSearchError(""), 2000);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearchClick();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -90,8 +136,24 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center relative max-w-sm">
-          <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search..." className="w-full pl-8 md:w-[300px] lg:w-[400px]" />
+          <div className="relative w-full">
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="w-full pl-10 md:w-[300px] lg:w-[400px]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleSearchClick} className="ml-4 p-1">
+            <Search className="h-4 w-4" />
+          </Button>
+          {searchError && (
+            <div className="absolute top-full left-0 text-red-500 text-sm mt-1">
+              {searchError}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -104,16 +166,12 @@ export function Navbar() {
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="hidden md:flex relative">
               <MessageSquare className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">3</Badge>
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">
+                3
+              </Badge>
               <span className="sr-only">Messages</span>
             </Button>
           </Link>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">5</Badge>
-            <span className="sr-only">Notifications</span>
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -137,16 +195,19 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem   onClick={() => {
-              localStorage.removeItem("token");
-              localStorage.removeItem("username");
-              window.location.reload();
-            }}>Log out</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("username");
+                  window.location.reload();
+                }}
+              >
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
     </header>
-  )
+  );
 }
-
