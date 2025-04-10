@@ -48,7 +48,6 @@ export function ProfilePosts({ baseUrl, username }: ProfilePostsProps) {
         const data = response.data;
         const profile = data.dataValues ? data.dataValues : data;
         setPosts(profile.posts || []);
-        console.log(data)
         setLoading(false);
       })
       .catch((error) => {

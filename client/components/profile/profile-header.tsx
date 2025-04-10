@@ -41,9 +41,22 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [showFollowersDialog, setShowFollowersDialog] = useState(false);
   const [dialogType, setDialogType] = useState<"followers" | "following">("followers");
+  const [followersList, setFollowersList] = useState<string[]>([]);
+  const [followingList, setFollowingList] = useState<string[]>([]);
 
-  const toggleFollow = () => {
-    setIsFollowing(!isFollowing);
+
+  const toggleFollow = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    await fetch(`${baseUrl}/users/follow`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userToFollow: username }),
+    });
+    setIsFollowing((v) => !v);
   };
 
   const openFollowersDialog = () => {
@@ -83,9 +96,10 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
           avatar: profile.avatar || "/placeholder.svg?height=150&width=150",
           stats: {
             posts: profile.posts ? profile.posts.length : 0,
-            followers: profile.followers || 0,
-            following: profile.following || 0,
+            followers: profile.followers?.length || 0,
+            following: profile.following?.length || 0,
           },
+          
         };
         setUser(userProfile);
         setLoading(false);
@@ -94,6 +108,18 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
         console.error("Error fetching profile:", err);
         setLoading(false);
       });
+
+      fetch(`${baseUrl}/users/followingState`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ follower: localStorage.getItem("username"), following: username }),
+      }).then(res => res.json())
+      .then(res => {
+        setIsFollowing(res)
+      })
+
   }, [baseUrl, username]);
 
   if (loading) {
