@@ -146,27 +146,40 @@ usersRouter.post("/changePassword", getToken, async(req,res)=>{
     }
 })
 
-usersRouter.post("/follow",getToken,async(req,res)=>{
+usersRouter.post("/follow", getToken, async (req, res) => {
     try {
-        const user = req.user
-        const userToFollow = await User.findOne({where: {username:req.body.userToFollow}})
-        const alreadyFollowing = await Follow.findOne({where:{followingId:userToFollow.id, followerId:user.id}})
-        if(alreadyFollowing) console.log("following already")
-        if(alreadyFollowing){
-            await alreadyFollowing.destroy()
-            console.log("destroyed")
-            return res.status(200).send(false)
-        }
-        const follow = await Follow.create({followingId: userToFollow.id, followerId: user.id})
-        if(follow){
-            console.log("following")
-            return res.status(200).send(follow)
-        }
+      const me = req.user;  
+      const { userToFollow: targetUsername } = req.body;
+  
+      const target = await User.findOne({ where: { username: targetUsername } });
+      if (!target) {
+        return res.status(404).send({ error: "User to follow not found" });
+      }
+  
+      if (target.id === me.id) {
+        return res.status(400).send({ error: "You cannot follow yourself" });
+      }
+  
+      const existing = await Follow.findOne({
+        where: { followingId: target.id, followerId: me.id },
+      });
+  
+      if (existing) {
+        await existing.destroy();
+        return res.status(200).send(false);  
+      }
+  
+      const follow = await Follow.create({
+        followingId: target.id,
+        followerId: me.id,
+      });
+      return res.status(200).send(follow);
     } catch (error) {
-        console.log(error)
-        return res.status(400).send(error)
+      console.error(error);
+      return res.status(500).send({ error: "Server error" });
     }
-})
+  });
+  
 
 usersRouter.post('/uploadImage', getToken,async (req, res) => {
     try {

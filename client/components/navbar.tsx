@@ -166,9 +166,6 @@ export function Navbar() {
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="hidden md:flex relative">
               <MessageSquare className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">
-                3
-              </Badge>
               <span className="sr-only">Messages</span>
             </Button>
           </Link>

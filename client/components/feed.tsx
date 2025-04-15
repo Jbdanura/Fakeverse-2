@@ -23,59 +23,51 @@ export interface PostType {
   content: string;
   image?: string;
   timestamp: string;
-  likes: number;
-  likedBy: any[];
+  Likes: any[];      // matches your API include
   Comments: any[];
 }
 
 export function Feed({ baseUrl }: FeedProps) {
   const [newPostContent, setNewPostContent] = useState("");
   const [posts, setPosts] = useState<PostType[]>([]);
+  const [view, setView] = useState<"all" | "following">("all");
+  const username = localStorage.getItem("username") || "";
 
   const fetchPosts = async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("No token found. User might not be authenticated.");
-      return;
-    }
+    if (!token) return;
+
+    const url =
+      view === "all"
+        ? `${baseUrl}/posts/all`
+        : `${baseUrl}/posts/all/following/${username}`;
+
     try {
-      const response = await axios.get(`${baseUrl}/posts/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setPosts(response.data);
+      console.log(posts)
     } catch (error) {
       console.error("Error fetching posts:", error);
     }
   };
 
-
-
   useEffect(() => {
     fetchPosts();
-  }, [baseUrl]);
+  }, [baseUrl, view]);
 
   const handlePostSubmit = async () => {
     if (!newPostContent.trim()) return;
-
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("No token found. User might not be authenticated.");
-      return;
-    }
+    if (!token) return;
+
     try {
-      const response = await axios.post(
+      await axios.post(
         `${baseUrl}/posts/new`,
         { content: newPostContent },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
       );
-      console.log("New post created:", response.data);
       setNewPostContent("");
       fetchPosts();
     } catch (error) {
@@ -84,15 +76,30 @@ export function Feed({ baseUrl }: FeedProps) {
   };
 
   const handleDeletePost = (postId: number) => {
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
   };
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-2">
+        <Button
+          variant={view === "all" ? "default" : "outline"}
+          onClick={() => setView("all")}
+        >
+          All Posts
+        </Button>
+        <Button
+          variant={view === "following" ? "default" : "outline"}
+          onClick={() => setView("following")}
+        >
+          Following
+        </Button>
+      </div>
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-start gap-4">
-            <Link href="/profile">
+            <Link href={`/profile/${username}`}>
               <Avatar>
                 <AvatarImage src="/placeholder.svg?height=40&width=40" alt="@user" />
                 <AvatarFallback>JD</AvatarFallback>
@@ -105,9 +112,7 @@ export function Feed({ baseUrl }: FeedProps) {
                 onChange={(e) => setNewPostContent(e.target.value)}
                 className="min-h-[80px]"
               />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                </div>
+              <div className="flex justify-end">
                 <Button onClick={handlePostSubmit} disabled={!newPostContent.trim()}>
                   Post
                 </Button>
@@ -117,9 +122,15 @@ export function Feed({ baseUrl }: FeedProps) {
         </CardHeader>
       </Card>
 
+      {/* === POSTS LIST === */}
       <div className="space-y-4">
-        {posts.map((post: PostType) => (
-          <Post key={post.id} post={post} baseUrl={baseUrl} onDelete={handleDeletePost}/>
+        {posts.map((post) => (
+          <Post
+            key={post.id}
+            post={post}
+            baseUrl={baseUrl}
+            onDelete={handleDeletePost}
+          />
         ))}
       </div>
     </div>

@@ -165,7 +165,7 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {localStorage.getItem("username") !== username ? 
           <div className="flex items-center gap-2 mt-4 md:mt-0">
             <Button variant="outline" size="sm" className="h-9">
               <MessageSquare className="h-4 w-4 mr-2" />
@@ -196,7 +196,8 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
+         : null }
+         </div>
 
         {/* Bio */}
         <div className="mt-4 max-w-2xl">
