@@ -84,26 +84,7 @@ export function ProfileSettings() {
             </div>
           </div>
 
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" value={user.name} onChange={handleChange} placeholder="Your name" />
-          </div>
-
-          {/* Username */}
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <div className="flex items-center">
-              <span className="text-muted-foreground mr-1">@</span>
-              <Input
-                id="username"
-                name="username"
-                value={user.username}
-                onChange={handleChange}
-                placeholder="username"
-              />
-            </div>
-          </div>
+          
 
           {/* Bio */}
           <div className="space-y-2">
@@ -115,30 +96,6 @@ export function ProfileSettings() {
               onChange={handleChange}
               placeholder="Tell us about yourself"
               rows={4}
-            />
-          </div>
-
-          {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              name="location"
-              value={user.location}
-              onChange={handleChange}
-              placeholder="Your location"
-            />
-          </div>
-
-          {/* Website */}
-          <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website"
-              name="website"
-              value={user.website}
-              onChange={handleChange}
-              placeholder="Your website"
             />
           </div>
         </CardContent>

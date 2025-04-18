@@ -135,17 +135,9 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Cover Photo */}
-      <div className="relative w-full h-[200px] md:h-[300px] rounded-t-xl overflow-hidden">
-        <Image
-          src={user.coverImage}
-          alt="Cover photo"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+      <div className="relative  md:h-[100px] rounded-t-xl overflow-hidden">
       </div>
 
       {/* Profile Info */}

@@ -37,9 +37,7 @@ export function ProfileTabs({ baseUrl, username,defaultTab = "posts" }: ProfileT
 
   return (
     <Tabs defaultValue={activeTab} value={activeTab} className="w-full" onValueChange={handleTabChange}>
-      <TabsList className="grid grid-cols-1 w-full max-w-3xl">
-        <TabsTrigger value="posts">Posts</TabsTrigger>
-      </TabsList>
+
       <TabsContent value="posts" className="mt-6">
          <ProfilePosts baseUrl={baseUrl} username={username}/>
        </TabsContent>

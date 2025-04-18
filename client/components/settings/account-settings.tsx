@@ -44,31 +44,6 @@ export function AccountSettings() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Email Address</CardTitle>
-          <CardDescription>Update your email address associated with your account.</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleEmailSubmit}>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                required
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit">Update Email</Button>
-          </CardFooter>
-        </form>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Change Password</CardTitle>
           <CardDescription>Update your password to keep your account secure.</CardDescription>
         </CardHeader>
@@ -114,40 +89,6 @@ export function AccountSettings() {
             <Button type="submit">Update Password</Button>
           </CardFooter>
         </form>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Management</CardTitle>
-          <CardDescription>Manage your account status and data.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="text-lg font-medium">Download Your Data</h3>
-            <p className="text-sm text-muted-foreground mb-2">
-              Get a copy of your data, including posts, photos, comments, and profile information.
-            </p>
-            <Button variant="outline">Request Data Export</Button>
-          </div>
-
-          <Separator className="my-4" />
-
-          <div>
-            <h3 className="text-lg font-medium text-destructive">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground mb-2">
-              Permanently delete your account and all of your content.
-            </p>
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Warning</AlertTitle>
-              <AlertDescription>
-                This action cannot be undone. This will permanently delete your account and remove your data from our
-                servers.
-              </AlertDescription>
-            </Alert>
-            <Button variant="destructive">Delete Account</Button>
-          </div>
-        </CardContent>
       </Card>
     </div>
   )
