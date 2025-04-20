@@ -23,7 +23,7 @@ export interface PostType {
   content: string;
   image?: string;
   timestamp: string;
-  Likes: any[];      // matches your API include
+  Likes: any[];      
   Comments: any[];
 }
 

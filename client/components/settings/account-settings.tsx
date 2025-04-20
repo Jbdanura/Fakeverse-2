@@ -7,38 +7,60 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { AlertCircle } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+
 
 export function AccountSettings() {
-  const [email, setEmail] = useState("johndoe@example.com")
+  const baseUrl = "http://localhost:5000"
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, you would send this data to your API
-    console.log("Updated email:", email)
-    alert("Email updated successfully!")
-  }
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
     if (newPassword !== confirmPassword) {
-      alert("New passwords don't match!")
-      return
+      setErrorMsg("New passwords do not match");
+      return;
     }
 
-    // In a real app, you would send this data to your API
-    console.log("Password updated")
-    setCurrentPassword("")
-    setNewPassword("")
-    setConfirmPassword("")
-    alert("Password updated successfully!")
-  }
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+
+      const res = await fetch(`${baseUrl}/users/changePassword`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          oldPassword: currentPassword,
+          newPassword: newPassword,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      setSuccessMsg("Password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Server error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -47,8 +69,16 @@ export function AccountSettings() {
           <CardTitle>Change Password</CardTitle>
           <CardDescription>Update your password to keep your account secure.</CardDescription>
         </CardHeader>
+
         <form onSubmit={handlePasswordSubmit}>
           <CardContent className="space-y-4">
+            {errorMsg && (
+              <div className="text-sm text-red-500">{errorMsg}</div>
+            )}
+            {successMsg && (
+              <div className="text-sm text-green-500">{successMsg}</div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
               <Input
@@ -58,6 +88,7 @@ export function AccountSettings() {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Enter your current password"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -70,6 +101,7 @@ export function AccountSettings() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter your new password"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -82,15 +114,19 @@ export function AccountSettings() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your new password"
                 required
+                disabled={loading}
               />
             </div>
           </CardContent>
+
           <CardFooter>
-            <Button type="submit">Update Password</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Updating..." : "Update Password"}
+            </Button>
           </CardFooter>
         </form>
       </Card>
     </div>
-  )
+  );
 }
 

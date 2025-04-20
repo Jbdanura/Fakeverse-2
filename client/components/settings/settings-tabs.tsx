@@ -3,9 +3,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileSettings } from "@/components/settings/profile-settings"
 import { AccountSettings } from "@/components/settings/account-settings"
-import { PrivacySettings } from "@/components/settings/privacy-settings"
-import { NotificationSettings } from "@/components/settings/notification-settings"
-import { AppearanceSettings } from "@/components/settings/appearance-settings"
 
 export function SettingsTabs() {
   return (
@@ -18,7 +15,7 @@ export function SettingsTabs() {
         <ProfileSettings />
       </TabsContent>
       <TabsContent value="account" className="mt-6">
-        <AccountSettings />
+        <AccountSettings  />
       </TabsContent>
     </Tabs>
   )

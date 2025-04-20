@@ -46,7 +46,6 @@ export function NotificationSettings() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, you would send this data to your API
     console.log("Updated notification settings:", { pushNotifications, emailNotifications })
     alert("Notification settings updated successfully!")
   }

@@ -4,10 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfilePosts } from "@/components/profile/profile-posts"
-import { ProfileAbout } from "@/components/profile/profile-about"
-import { ProfileFriends } from "@/components/profile/profile-friends"
-import { ProfilePhotos } from "@/components/profile/profile-photos"
-import { ProfileSaved } from "@/components/profile/profile-saved"
 
 interface ProfileTabsProps {
   baseUrl: string,

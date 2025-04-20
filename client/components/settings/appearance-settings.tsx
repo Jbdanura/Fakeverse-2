@@ -16,7 +16,6 @@ export function AppearanceSettings() {
   const [mounted, setMounted] = useState(false)
   const [fontSize, setFontSize] = useState(16)
 
-  // Ensure theme is only accessed client-side
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -27,7 +26,6 @@ export function AppearanceSettings() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, you would save the font size to user preferences
     console.log("Updated appearance settings:", { theme, fontSize })
     alert("Appearance settings updated successfully!")
   }

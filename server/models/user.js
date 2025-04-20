@@ -1,32 +1,39 @@
-const {DataTypes, Model } = require('sequelize');
-const {sequelize} = require("../db.js")
+const { DataTypes } = require('sequelize');
+const { sequelize } = require("../db.js");
 
-const User = sequelize.define("user",{
+const User = sequelize.define("user", {
   username: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    validate:{
-        isAlphanumeric: true,
-        len: [3, 10]
+    validate: {
+      isAlphanumeric: true,
+      len: [3, 10],
     },
   },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    validate:{
-        len: [7, 60],
-        isEmail:true,
-    }
+    validate: {
+      len: [7, 60],
+      isEmail: true,
+    },
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate:{
-        len: [5, 200]
-    }
-  }
-})
+    validate: {
+      len: [5, 200],
+    },
+  },
+  biography: {
+    type: DataTypes.STRING(300),
+    allowNull: true,
+    validate: {
+      len: [0, 300],
+    },
+  },
+});
 
-module.exports = User
+module.exports = User;

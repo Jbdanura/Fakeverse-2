@@ -57,7 +57,7 @@ usersRouter.post("/login",async(req,res)=>{
 usersRouter.get("/user/:username",async(req,res)=>{
     try {
         const username = req.params.username.toLowerCase()
-        const user = await User.findOne({where:{username},attributes:["username","id"],
+        const user = await User.findOne({where:{username},attributes:["username","id","biography","updatedAt"],
         include:[{model:Post,include:[{model:Like,include:{model:User,attributes:["username"]}},{model:Comment,include:{model:User,attributes:["username"]}}]}],order: [[Post, "createdAt", "DESC"]],})
         console.log(user)
         return res.status(200).send(user)
@@ -193,6 +193,22 @@ usersRouter.post('/uploadImage', getToken,async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ err: 'Something went wrong' });
+    }
+});
+
+usersRouter.patch("/bio", getToken, async (req, res) => {
+    try {
+      const me = req.user;
+      const { bio } = req.body;
+      if (typeof bio !== "string" || bio.length > 300) {
+        return res.status(400).send("Bio must be a string under 300 characters");
+      }
+      me.biography = bio;
+      await me.save();
+      return res.status(200).json({ bio: me.biography });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send("Server error");
     }
 });
 

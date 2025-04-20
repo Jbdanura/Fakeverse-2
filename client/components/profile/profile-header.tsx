@@ -25,8 +25,6 @@ interface UserProfile {
   avatar: string;
   stats: {
     posts: number;
-    followers: number;
-    following: number;
   };
 }
 
@@ -43,7 +41,6 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
   const [dialogType, setDialogType] = useState<"followers" | "following">("followers");
   const [followersList, setFollowersList] = useState<string[]>([]);
   const [followingList, setFollowingList] = useState<string[]>([]);
-
 
   const toggleFollow = async () => {
     const token = localStorage.getItem("token");
@@ -75,6 +72,15 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
       setLoading(false);
       return;
     }
+    fetch(`${baseUrl}/users/followInfo/${username}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then(({ followers, following }) => {
+        setFollowersList(followers.map((f: any) => f.follower.username));
+        setFollowingList(following.map((f: any) => f.following.username));
+      })
+      .catch(console.error);
     fetch(`${baseUrl}/users/user/${username}`, {
       method: "GET",
       headers: {
@@ -84,20 +90,21 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
     })
       .then((res) => res.json())
       .then((data) => {
+        console.log(data)
         const profile = data.dataValues ? data.dataValues : data;
         const userProfile: UserProfile = {
           name: profile.name || profile.username,
           username: profile.username,
-          bio: profile.bio || "No bio provided.",
+          bio: profile.biography || "No bio provided.",
           location: profile.location || "",
           website: profile.website || "",
-          joinDate: profile.joinDate || "Joined date unknown",
+          joinDate: profile.updatedAt
+          ? `Joined ${profile.updatedAt.slice(0, 10)}`
+          : "Joined date unknown",
           coverImage: profile.coverImage || "/placeholder.svg?height=400&width=1200",
           avatar: profile.avatar || "/placeholder.svg?height=150&width=150",
           stats: {
             posts: profile.posts ? profile.posts.length : 0,
-            followers: profile.followers?.length || 0,
-            following: profile.following?.length || 0,
           },
           
         };
@@ -136,21 +143,17 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
 
   return (
     <div className="mb-6 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Cover Photo */}
       <div className="relative  md:h-[100px] rounded-t-xl overflow-hidden">
       </div>
 
-      {/* Profile Info */}
       <div className="relative px-4 pb-4 -mt-16 md:-mt-20">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col md:flex-row md:items-end gap-4">
-            {/* Avatar */}
             <Avatar className="h-32 w-32 border-4 border-background">
               <AvatarImage src={user.avatar} alt={user.name} />
               <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
             </Avatar>
-
-            {/* User Info */}
+            
             <div className="mt-2 md:mt-0 md:mb-2" style={{transform:"translateY(-15px)"}}>
               <h1 className="text-2xl font-bold">{user.name}</h1>
               <p className="text-muted-foreground">@{user.username}</p>
@@ -191,7 +194,6 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
          : null }
          </div>
 
-        {/* Bio */}
         <div className="mt-4 max-w-2xl">
           <p>{user.bio}</p>
           <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-muted-foreground">
@@ -221,24 +223,22 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="flex gap-4 mt-4">
           <div>
             <span className="font-bold">{user.stats.posts}</span> <span className="text-muted-foreground">Posts</span>
           </div>
           <button onClick={openFollowersDialog} className="hover:underline">
-            <span className="font-bold">{user.stats.followers}</span>{" "}
+            <span className="font-bold">{followersList.length}</span>{" "}
             <span className="text-muted-foreground">Followers</span>
           </button>
           <button onClick={openFollowingDialog} className="hover:underline">
-            <span className="font-bold">{user.stats.following}</span>{" "}
+            <span className="font-bold">{followingList.length}</span>{" "}
             <span className="text-muted-foreground">Following</span>
           </button>
         </div>
       </div>
 
-      {/* Followers/Following Dialog */}
-      <FollowersDialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog} type={dialogType} />
+      <FollowersDialog open={showFollowersDialog} onOpenChange={setShowFollowersDialog} type={dialogType} followers={followersList} following={followingList} />
     </div>
   );
 }
