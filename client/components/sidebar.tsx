@@ -41,7 +41,6 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
       }
 
       try {
-        // Fetch user profile data
         const resUser = await fetch(`${baseUrl}/users/user/${storedUsername}`, {
           method: "GET",
           headers: {
@@ -59,7 +58,6 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
           setUserPostsCount(responsePostCount.data.count);
         }
 
-        // Fetch follow info
         const resFollow = await fetch(`${baseUrl}/users/followInfo/${storedUsername}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -70,10 +68,12 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
           setFollowingCount(Array.isArray(followData.following) ? followData.following.length : 0);
         }
 
-        // Fetch recommended users
         const resRecommended = await fetch(`${baseUrl}/users/recommended`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
         });
         if (resRecommended.ok) {
           const recommendedData: RecommendedUser[] = await resRecommended.json();
@@ -194,9 +194,7 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
                       <p className="text-xs text-muted-foreground">@{user.username}</p>
                     </div>
                   </a>
-                  <Button variant="outline" size="sm" className="h-8 text-xs">
-                    Follow
-                  </Button>
+
                 </div>
               ))
             ) : (

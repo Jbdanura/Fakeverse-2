@@ -66,15 +66,24 @@ usersRouter.get("/user/:username",async(req,res)=>{
     }
 })
 
-usersRouter.get("/recommended",async(req,res)=>{
+usersRouter.get("/recommended", getToken, async (req, res) => {
     try {
-        const users = await User.findAll({limit: 3,attributes:["username","id"]})
-        return res.status(200).send(users)
-    } catch (error) {
-        return res.status(400).send(error) 
-    }
+        const allUsers = await User.findAll({
+            attributes: ["username", "id"]
+        });
 
-})
+        const currentUsername = req.user.username;
+
+        const filteredUsers = allUsers
+            .filter(user => user.username !== currentUsername)
+            .splice(0,6)
+
+        return res.status(200).send(filteredUsers);
+    } catch (error) {
+        return res.status(400).send(error);
+    }
+});
+
 
 usersRouter.get("/followInfo/:username",async(req,res)=>{
     try {
