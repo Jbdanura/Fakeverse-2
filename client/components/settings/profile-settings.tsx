@@ -1,6 +1,7 @@
+// components/settings/profile‑settings.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,49 +15,92 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Upload } from "lucide-react";
-
-
+import { Camera } from "lucide-react";
 
 export function ProfileSettings() {
-  const baseUrl = "http://localhost:5000"
-  const [bio, setBio] = useState(
-    ""
+  const baseUrl = "http://localhost:5000";
+  const cloudName = "dchytnqhl";
+  const [bio, setBio] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string>(
+    "/placeholder.svg"
   );
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      // optimistic preview
+      setAvatarPreview(base64);
+
+      // upload to your server, which in turn pushes to Cloudinary
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Not authenticated");
+
+        const res = await fetch(`${baseUrl}/users/uploadAvatar`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ data: base64 }),
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err);
+        }
+
+        const { secure_url } = await res.json();
+        setAvatarPreview(secure_url);
+        setMessage("Avatar updated!");
+      } catch (err: any) {
+        console.error(err);
+        setMessage("Upload failed: " + (err.message || err));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // on mount, load existing avatar directly from Cloudinary by username
+  useEffect(() => {
+    const username = localStorage.getItem("username");
+    if (username && cloudName) {
+      setAvatarPreview(
+        `https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${username}.png`
+      );
+    }
+  }, [cloudName]);
+
+  // bio save (unchanged)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setMessage(null);
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setMessage("Not authenticated.");
-      setIsSaving(false);
-      return;
-    }
-
     try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+
       const res = await fetch(`${baseUrl}/users/bio`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ bio }),     
+        body: JSON.stringify({ bio }),
       });
-
-      if (res.ok) {
-        setMessage("Bio updated successfully!");
-      } else {
+      if (!res.ok) {
         const err = await res.text();
-        setMessage(`Error: ${err}`);
+        throw new Error(err);
       }
-    } catch (err) {
+      setMessage("Bio updated successfully!");
+    } catch (err: any) {
       console.error(err);
-      setMessage("Network error");
+      setMessage("Error: " + (err.message || err));
     } finally {
       setIsSaving(false);
     }
@@ -68,44 +112,33 @@ export function ProfileSettings() {
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
           <CardDescription>
-            Update your profile information and how others see you on the
-            platform.
+            Update your profile and avatar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Cover Image</Label>
-            <div className="relative w-full h-[200px] rounded-lg overflow-hidden border">
-              <Image
-                src="/placeholder.svg"
-                alt="Cover"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Button variant="secondary" size="sm" className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  Change Cover
-                </Button>
-              </div>
-            </div>
-          </div>
-
+          {/* Avatar Upload */}
           <div className="space-y-2">
             <Label>Profile Picture</Label>
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src="/placeholder.svg" alt="You" />
+                  <AvatarImage src={avatarPreview} alt="You" />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                {/* Invisible file input covering the camera button */}
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="absolute -bottom-2 -right-2 h-8 w-8 opacity-0 cursor-pointer"
+                />
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-white flex items-center justify-center shadow cursor-pointer"
                 >
                   <Camera className="h-4 w-4" />
-                </Button>
+                </label>
               </div>
               <div className="text-sm text-muted-foreground">
                 <p>Upload a new profile picture</p>
@@ -114,6 +147,7 @@ export function ProfileSettings() {
             </div>
           </div>
 
+          {/* Bio */}
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -126,14 +160,13 @@ export function ProfileSettings() {
             />
           </div>
         </CardContent>
+
         <CardFooter className="flex flex-col items-start gap-2">
           <Button type="submit" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
           {message && (
-            <p className="text-sm text-center text-muted-foreground">
-              {message}
-            </p>
+            <p className="text-sm text-muted-foreground">{message}</p>
           )}
         </CardFooter>
       </Card>

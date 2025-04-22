@@ -181,20 +181,19 @@ usersRouter.post("/follow", getToken, async (req, res) => {
   });
   
 
-usersRouter.post('/uploadImage', getToken,async (req, res) => {
+  usersRouter.post('/uploadAvatar', getToken,async (req, res) => {
     try {
-        const fileStr = req.body.data;
-        const uploadResponse = await cloudinary.uploader.upload(fileStr,{
-            public_id: `${req.user.username}`,
-            folder: 'linkity'
-        });
-        console.log(uploadResponse);
-        res.status(200).send("Image uploaded");
+      const fileStr = req.body.data;
+      const uploadResponse = await cloudinary.uploader.upload(fileStr,{
+        public_id: `${req.user.username}`, 
+        folder: 'fakeverse'
+      });
+      return res.status(200).json({ url: uploadResponse.secure_url });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ err: 'Something went wrong' });
+      console.error(err);
+      return res.status(500).json({ error: 'Something went wrong' });
     }
-});
+  });
 
 usersRouter.patch("/bio", getToken, async (req, res) => {
     try {

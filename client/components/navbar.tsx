@@ -1,6 +1,7 @@
+// components/Navbar.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Home, Menu, MessageSquare, Search, Settings, User } from "lucide-react";
@@ -16,14 +17,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchError, setSearchError] = useState("");
   const router = useRouter();
-  const baseUrl = "http://localhost:5000"; // adjust as needed
+  const baseUrl = "http://localhost:5000"; 
+
+  const cloudName = "dchytnqhl";
+  const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
+  const [avatarUrl, setAvatarUrl] = useState<string>("/placeholder.svg");
+
+  useEffect(() => {
+    if (cloudName && username) {
+      setAvatarUrl(
+        `https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${username}.png`
+      );
+    }
+  }, [cloudName, username]);
 
   const handleSearchClick = async () => {
     const query = searchQuery.trim().toLowerCase();
@@ -31,6 +43,7 @@ export function Navbar() {
 
     const token = localStorage.getItem("token");
     if (!token) return;
+
     try {
       const res = await fetch(`${baseUrl}/users/user/${query}`, {
         method: "GET",
@@ -41,8 +54,7 @@ export function Navbar() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.username) {
-          // Navigate to the dynamic profile page.
+        if (data?.username) {
           router.push(`/profile/${data.username}`);
           setSearchQuery("");
         } else {
@@ -82,41 +94,33 @@ export function Navbar() {
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-4 mt-4">
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Home className="h-5 w-5" />
-                  Home
+                <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Home className="h-5 w-5" /> Home
+                  </div>
+                </Link>
+                <Link href="/chat" onClick={() => setIsMobileMenuOpen(false)}>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <MessageSquare className="h-5 w-5" /> Messages
+                  </div>
                 </Link>
                 <Link
-                  href="/chat"
-                  className="flex items-center gap-2 text-sm font-medium"
+                  href={`/profile/${username}`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <MessageSquare className="h-5 w-5" />
-                  Messages
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <User className="h-5 w-5" /> Profile
+                  </div>
                 </Link>
-                <Link
-                  href={`/profile/${localStorage.getItem("username")}`}
-                  className="flex items-center gap-2 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <User className="h-5 w-5" />
-                  Profile
-                </Link>
-                <Link
-                  href="/settings"
-                  className="flex items-center gap-2 text-sm font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Settings className="h-5 w-5" />
-                  Settings
+                <Link href="/settings" onClick={() => setIsMobileMenuOpen(false)}>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Settings className="h-5 w-5" /> Settings
+                  </div>
                 </Link>
               </nav>
             </SheetContent>
           </Sheet>
+
           <Link href="/" className="flex items-center gap-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -136,17 +140,20 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center relative max-w-sm">
-          <div className="relative w-full">
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="w-full pl-10 md:w-[300px] lg:w-[400px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleSearchClick} className="ml-4 p-1">
+          <Input
+            type="search"
+            placeholder="Search..."
+            className="w-full pl-10 md:w-[300px] lg:w-[400px]"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSearchClick}
+            className="ml-4 p-1"
+          >
             <Search className="h-4 w-4" />
           </Button>
           {searchError && (
@@ -173,8 +180,8 @@ export function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg?height=32&width=32" alt="@user" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={avatarUrl} alt={username || ""} />
+                  <AvatarFallback>{username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -182,12 +189,12 @@ export function Navbar() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href={`/profile/${localStorage.getItem("username")}`} className="w-full cursor-pointer">
+                <Link href={`/profile/${username}`} className="w-full">
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings" className="w-full cursor-pointer">
+                <Link href="/settings" className="w-full">
                   Settings
                 </Link>
               </DropdownMenuItem>
