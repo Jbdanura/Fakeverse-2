@@ -41,7 +41,8 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
   const [dialogType, setDialogType] = useState<"followers" | "following">("followers");
   const [followersList, setFollowersList] = useState<string[]>([]);
   const [followingList, setFollowingList] = useState<string[]>([]);
-
+  const cloudName = "dchytnqhl";
+  
   const toggleFollow = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -150,7 +151,7 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col md:flex-row md:items-end gap-4">
             <Avatar className="h-32 w-32 border-4 border-background">
-              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`} alt={user.name} />
               <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
             </Avatar>
             

@@ -30,7 +30,8 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
   const [userPostsCount, setUserPostsCount] = useState<number>(0);
   const [recommendedUsers, setRecommendedUsers] = useState<RecommendedUser[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const cloudName = "dchytnqhl";
+  
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("token");
@@ -115,7 +116,7 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
         <CardContent className="grid gap-4">
           <Link href={`/profile/${userData.username}`} className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={userData.avatarUrl || "/placeholder.svg?height=48&width=48"} alt={`@${userData.username}`} />
+              <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${userData.username}.png`} alt={`@${userData.username}`} />
               <AvatarFallback>{userData.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
@@ -184,7 +185,7 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
                   <a className="flex items-center gap-2" href={`/profile/${user.username}`}>
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={`/placeholder.svg?height=32&width=32&text=${user.username.charAt(0).toUpperCase()}`}
+                        src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`}
                         alt={user.username}
                       />
                       <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>

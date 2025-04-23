@@ -1,3 +1,4 @@
+// components/Feed.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -23,7 +24,7 @@ export interface PostType {
   content: string;
   image?: string;
   timestamp: string;
-  Likes: any[];      
+  Likes: any[];
   Comments: any[];
 }
 
@@ -31,7 +32,21 @@ export function Feed({ baseUrl }: FeedProps) {
   const [newPostContent, setNewPostContent] = useState("");
   const [posts, setPosts] = useState<PostType[]>([]);
   const [view, setView] = useState<"all" | "following">("all");
-  const username = localStorage.getItem("username") || "";
+
+  // pull your username from localStorage
+  const me =
+    typeof window !== "undefined"
+      ? localStorage.getItem("username") || ""
+      : "";
+
+  // hard-coded Cloudinary cloud name
+  const cloudName = "dchytnqhl";
+
+  // build my own avatar URL
+  const myAvatar =
+    me && cloudName
+      ? `https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${me}.png`
+      : "/placeholder.svg";
 
   const fetchPosts = async () => {
     const token = localStorage.getItem("token");
@@ -40,14 +55,26 @@ export function Feed({ baseUrl }: FeedProps) {
     const url =
       view === "all"
         ? `${baseUrl}/posts/all`
-        : `${baseUrl}/posts/all/following/${username}`;
+        : `${baseUrl}/posts/all/following/${me}`;
 
     try {
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setPosts(response.data);
-      console.log(posts)
+
+      // map each post to inject the Cloudinary avatar URL
+      const mapped: PostType[] = response.data.map((p: any) => ({
+        ...p,
+        user: {
+          ...p.user,
+          avatar:
+            cloudName && p.user.username
+              ? `https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${p.user.username}.png`
+              : "/placeholder.svg",
+        },
+      }));
+
+      setPosts(mapped);
     } catch (error) {
       console.error("Error fetching posts:", error);
     }
@@ -66,12 +93,17 @@ export function Feed({ baseUrl }: FeedProps) {
       await axios.post(
         `${baseUrl}/posts/new`,
         { content: newPostContent },
-        { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setNewPostContent("");
       fetchPosts();
     } catch (error) {
-      console.error("Error posting new post:", error);
+      console.error("Error creating post:", error);
     }
   };
 
@@ -81,6 +113,7 @@ export function Feed({ baseUrl }: FeedProps) {
 
   return (
     <div className="space-y-4">
+      {/* Toggle between all / following */}
       <div className="flex gap-2">
         <Button
           variant={view === "all" ? "default" : "outline"}
@@ -96,13 +129,14 @@ export function Feed({ baseUrl }: FeedProps) {
         </Button>
       </div>
 
+      {/* New Post Input */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-start gap-4">
-            <Link href={`/profile/${username}`}>
+            <Link href={`/profile/${me}`}>
               <Avatar>
-                <AvatarImage src="/placeholder.svg?height=40&width=40" alt="@user" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={myAvatar} alt={`@${me}`} />
+                <AvatarFallback>{me.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             </Link>
             <div className="grid w-full gap-1.5">
@@ -113,7 +147,10 @@ export function Feed({ baseUrl }: FeedProps) {
                 className="min-h-[80px]"
               />
               <div className="flex justify-end">
-                <Button onClick={handlePostSubmit} disabled={!newPostContent.trim()}>
+                <Button
+                  onClick={handlePostSubmit}
+                  disabled={!newPostContent.trim()}
+                >
                   Post
                 </Button>
               </div>
@@ -122,7 +159,7 @@ export function Feed({ baseUrl }: FeedProps) {
         </CardHeader>
       </Card>
 
-      {/* === POSTS LIST === */}
+      {/* Posts List */}
       <div className="space-y-4">
         {posts.map((post) => (
           <Post

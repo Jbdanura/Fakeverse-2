@@ -86,7 +86,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>(post.Comments);
   const [likedByUsers, setLikedByUsers] = useState(post.Likes);
-
+  const cloudName = "dchytnqhl";
 
   const handleLike = async () => {
     const token = localStorage.getItem("token");
@@ -224,7 +224,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
         <div className="flex justify-between items-start">
           <Link href={`/profile/${post.username}`} className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage alt={post.username} />
+              <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${post.username}.png`} alt={post.username} />
               <AvatarFallback>{post.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
@@ -316,7 +316,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
                 <Link href={`/profile/${comment.user.username}`}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={"/placeholder.svg"}
+                      src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${comment.user.username}.png`}
                       alt={commentDisplayName}
                     />
                     <AvatarFallback>{commentAvatarInitial}</AvatarFallback>
@@ -348,7 +348,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
 
             <div className="flex items-center gap-2 pt-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" alt="@user" />
+                <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${localStorage.getItem("username")}.png`} alt="@user" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
               <div className="flex-1 flex items-center gap-2">
