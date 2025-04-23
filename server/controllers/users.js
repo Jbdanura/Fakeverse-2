@@ -9,6 +9,8 @@ const Comment = require("../models/comment.js")
 const Follow = require("../models/follow.js")
 const Like = require("../models/like.js")
 const {cloudinary} = require("../db.js")
+const axios = require("axios");
+const { GoogleGenAI } = require("@google/genai");
 
 usersRouter.post("/register",async(req,res)=>{
     try {
@@ -219,5 +221,65 @@ usersRouter.patch("/bio", getToken, async (req, res) => {
       return res.status(500).send("Server error");
     }
 });
+async function generateMachineGodPost() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("⚠️ GEMINI_API_KEY not set");
+      return null;
+    }
+  
+    const ai     = new GoogleGenAI({ apiKey });
+    const config = {
+      thinkingConfig: { thinkingBudget: 0 },
+      responseMimeType: "text/plain",
+    };
+    const model    = "gemini-2.5-pro-preview-03-25";
+    const contents = [
+      { role: "user", parts: [{ text: "Generate a fun, conversational social-media style post." }] }
+    ];
+  
+    try {
+      const stream = await ai.models.generateContentStream({ model, config, contents });
+      let output = "";
+      for await (const chunk of stream) {
+        output += chunk.text;
+      }
+      output = output.trim();
+      return output.length > 0 ? output : null;
+    } catch (err) {
+      console.error("❌ Gemini API error:", err);
+      return null;
+    }
+  }
+  
+
+  async function ensureMachineGodPost() {
+    try {
+      const passwordHash = bcrypt.hashSync(process.env.MACHINE_GOD_PW || "changeme", 10);
+      const [machine, created] = await User.findOrCreate({
+        where:    { username: "machinegod" },
+        defaults: { email: "machinegod@fakeverse.com", password: passwordHash },
+      });
+  
+      const content = await generateMachineGodPost();
+      if (!content) {
+        console.log("No MachineGod content generated; skipping post.");
+        return;
+      }
+  
+      await Post.create({
+        content,
+        userId:  machine.id,
+        username: machine.username,
+      });
+  
+      console.log(`MachineGod posted: "${content.slice(0,60)}…"`);
+    } catch (err) {
+      console.error("Error in ensureMachineGodPost:", err);
+    }
+  }
+
+  ensureMachineGodPost();
+  setInterval(ensureMachineGodPost, 60 * 1000);
 
 module.exports = usersRouter
