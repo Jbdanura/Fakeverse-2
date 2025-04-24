@@ -99,11 +99,12 @@ export function Navbar() {
                     <Home className="h-5 w-5" /> Home
                   </div>
                 </Link>
+                {/*
                 <Link href="/chat" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <MessageSquare className="h-5 w-5" /> Messages
                   </div>
-                </Link>
+                </Link>*/}
                 <Link
                   href={`/profile/${username}`}
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -170,12 +171,13 @@ export function Navbar() {
               <span className="sr-only">Home</span>
             </Button>
           </Link>
+          {/*
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="hidden md:flex relative">
               <MessageSquare className="h-5 w-5" />
               <span className="sr-only">Messages</span>
             </Button>
-          </Link>
+          </Link>*/}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">

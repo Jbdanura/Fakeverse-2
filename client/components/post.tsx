@@ -60,7 +60,7 @@ interface PostProps {
     };
     content: string;
     image?: string;
-    timestamp: string;
+    updatedAt: string;
     Likes: Like[];
     Comments: Comment[];
     likedBy?: User[];
@@ -230,7 +230,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
             <div>
               <div className="font-semibold">{post.username}</div>
               <div className="text-xs text-muted-foreground">
-                @{post.username} · {post.timestamp}
+                @{post.username} · {post.updatedAt.slice(0,10)}
               </div>
             </div>
           </Link>
