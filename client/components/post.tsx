@@ -86,6 +86,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>(post.Comments);
   const [likedByUsers, setLikedByUsers] = useState(post.Likes);
+  const [messageErr,setMessageErr] = useState("")
   const cloudName = "dchytnqhl";
 
   const handleLike = async () => {
@@ -145,9 +146,12 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
         setComments((prevComments) => [...prevComments, newComment]);
         setCommentText("");
       } else {
-        console.error("Failed to post comment");
+        setMessageErr("Comment too short/long");
+        setInterval(()=>{
+          setMessageErr("")
+        },2000)
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("Error posting comment:", error);
     }
   };
@@ -215,6 +219,12 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
 
   return (
     <Card className="relative">
+      {messageErr && (
+        <div
+          className={`fixed top-4 left-1/2 bg-red-500 transform -translate-x-1/2 px-4 py-2 text-white rounded shadow-lg z-50`}>
+        {messageErr}
+        </div>
+      )}
       {deleteMessage && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-lg font-bold z-10">
           {deleteMessage}

@@ -8,14 +8,13 @@ type AuthProps = {
   
 export default function Auth({ baseUrl }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true);
-  const [message, setMessage] = useState(""); // Message text
-  const [messageType, setMessageType] = useState<"error" | "success">("success"); // Message type
+  const [message, setMessage] = useState(""); 
+  const [messageType, setMessageType] = useState<"error" | "success">("success"); 
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
   };
 
-  // Map raw error messages from the API to more user-friendly messages.
   const formatErrorMessage = (msg: string) => {
     switch (msg) {
       case "Username length must be between 3 and 10 characters":
@@ -62,12 +61,15 @@ export default function Auth({ baseUrl }: AuthProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
       let data;
       try {
         data = await res.json();
-      } catch (jsonError) {
-        console.error("Parsing error:", jsonError);
+      } catch (error:any) {
+        console.error("Parsing error bro:", error);
         showMessage("Unexpected response from server.", "error");
         return;
       }
@@ -79,9 +81,9 @@ export default function Auth({ baseUrl }: AuthProps) {
         localStorage.setItem("username",data.username);
         showMessage("Login successful!", "success", true);
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("Error during login:", error);
-      showMessage("An error occurred during login.", "error");
+      showMessage(error.message, "error");
     }
   };
 
@@ -98,7 +100,10 @@ export default function Auth({ baseUrl }: AuthProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
       });
-
+      if(!res.ok){
+        const text = await res.text();
+        throw new Error(text);
+      }
       let data;
       try {
         data = await res.json();
@@ -113,15 +118,14 @@ export default function Auth({ baseUrl }: AuthProps) {
       } else {
         showMessage("Registration successful!", "success", true);
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("Error during registration:", error);
-      showMessage("An error occurred during registration.", "error");
+      showMessage(error.message, "error");
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 dark:bg-gray-900 relative">
-      {/* Pop-up Message */}
       {message && (
         <div
           className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 text-white rounded shadow-lg z-50 ${

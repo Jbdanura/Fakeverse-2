@@ -280,6 +280,6 @@ async function generateMachineGodPost() {
   }
 
   ensureMachineGodPost();
-  setInterval(ensureMachineGodPost, 60 * 1000);
+  setInterval(ensureMachineGodPost, 12 * 60 * 60 * 1000);
 
 module.exports = usersRouter

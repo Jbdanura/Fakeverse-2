@@ -3,10 +3,10 @@ require("dotenv").config({path:"./secret/.env"})
 const {Sequelize} = require("sequelize")
 const cloudinary = require('cloudinary').v2;
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
+  /*dialect: 'postgres',
   dialectOptions: {  
     ssl: { require: true, rejectUnauthorized: false }
-  }
+  }*/
 });
 
 const connect = async() => {

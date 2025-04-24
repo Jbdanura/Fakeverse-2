@@ -32,6 +32,7 @@ export function Feed({ baseUrl }: FeedProps) {
   const [newPostContent, setNewPostContent] = useState("");
   const [posts, setPosts] = useState<PostType[]>([]);
   const [view, setView] = useState<"all" | "following">("all");
+  const [messageErr,setMessageErr] = useState(null)
 
   // pull your username from localStorage
   const me =
@@ -102,8 +103,11 @@ export function Feed({ baseUrl }: FeedProps) {
       );
       setNewPostContent("");
       fetchPosts();
-    } catch (error) {
-      console.error("Error creating post:", error);
+    } catch (error:any) {
+      setMessageErr(error.response.data)
+      setInterval(()=>{
+        setMessageErr(null)
+      },2500)
     }
   };
 
@@ -113,7 +117,13 @@ export function Feed({ baseUrl }: FeedProps) {
 
   return (
     <div className="space-y-4">
-      {/* Toggle between all / following */}
+      {messageErr && (
+        <div
+          className={`fixed top-4 left-1/2 bg-red-500 transform -translate-x-1/2 px-4 py-2 text-white rounded shadow-lg z-50`}>
+        {messageErr}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <Button
           variant={view === "all" ? "default" : "outline"}

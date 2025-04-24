@@ -56,6 +56,7 @@ export function AccountSettings() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
+      console.log(err)
       setErrorMsg(err.message || "Server error");
     } finally {
       setLoading(false);
