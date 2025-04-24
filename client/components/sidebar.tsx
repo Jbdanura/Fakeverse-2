@@ -116,7 +116,7 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
         <CardContent className="grid gap-4">
           <Link href={`/profile/${userData.username}`} className="flex items-center gap-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${userData.username}.png`} alt={`@${userData.username}`} />
+              <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${userData.username}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${userData.username}.png`} alt={`@${userData.username}`} />
               <AvatarFallback>{userData.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
@@ -185,6 +185,7 @@ export function Sidebar({ baseUrl }: { baseUrl: string }) {
                   <a className="flex items-center gap-2" href={`/profile/${user.username}`}>
                     <Avatar className="h-8 w-8">
                       <AvatarImage
+                        key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`}
                         src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`}
                         alt={user.username}
                       />

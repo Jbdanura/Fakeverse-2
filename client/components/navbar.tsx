@@ -54,6 +54,7 @@ export function Navbar() {
       });
       if (res.ok) {
         const data = await res.json();
+        console.log(data)
         if (data?.username) {
           router.push(`/profile/${data.username}`);
           setSearchQuery("");
@@ -182,7 +183,7 @@ export function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={avatarUrl} alt={username || ""} />
+                  <AvatarImage src={avatarUrl} key={avatarUrl} alt={username || ""} />
                   <AvatarFallback>{username?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </Button>

@@ -122,7 +122,7 @@ export function ProfileSettings() {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={avatarPreview} alt="You" />
+                  <AvatarImage key={avatarPreview} src={avatarPreview} alt="You" />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
                 {/* Invisible file input covering the camera button */}

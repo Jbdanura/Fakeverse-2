@@ -145,7 +145,7 @@ export function Feed({ baseUrl }: FeedProps) {
           <div className="flex items-start gap-4">
             <Link href={`/profile/${me}`}>
               <Avatar>
-                <AvatarImage src={myAvatar} alt={`@${me}`} />
+                <AvatarImage src={myAvatar} key={myAvatar} alt={`@${me}`} />
                 <AvatarFallback>{me.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             </Link>

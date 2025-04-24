@@ -234,7 +234,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
         <div className="flex justify-between items-start">
           <Link href={`/profile/${post.username}`} className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${post.username}.png`} alt={post.username} />
+              <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${post.username}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${post.username}.png`} alt={post.username} />
               <AvatarFallback>{post.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
@@ -326,6 +326,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
                 <Link href={`/profile/${comment.user.username}`}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage
+                      key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${comment.user.username}.png`}
                       src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${comment.user.username}.png`}
                       alt={commentDisplayName}
                     />
@@ -358,7 +359,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
 
             <div className="flex items-center gap-2 pt-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${localStorage.getItem("username")}.png`} alt="@user" />
+                <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${localStorage.getItem("username")}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${localStorage.getItem("username")}.png`} alt="@user" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
               <div className="flex-1 flex items-center gap-2">

@@ -151,7 +151,7 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col md:flex-row md:items-end gap-4">
             <Avatar className="h-32 w-32 border-4 border-background">
-              <AvatarImage src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`} alt={user.name} />
+              <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${user.username}.png`} alt={user.name} />
               <AvatarFallback>{getAvatarInitials()}</AvatarFallback>
             </Avatar>
             
