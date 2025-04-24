@@ -22,7 +22,7 @@ interface UserProfile {
   website?: string;
   joinDate: string;
   coverImage: string;
-  avatar: string;
+  avatar: string; 
   stats: {
     posts: number;
   };
