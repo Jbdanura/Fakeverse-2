@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Camera } from "lucide-react";
 
 export function ProfileSettings() {
-  const baseUrl = "http://localhost:5000";
+  const baseUrl = "https://fakeverse-2.onrender.com"
   const cloudName = "dchytnqhl";
   const [bio, setBio] = useState<string>("");
   const [avatarPreview, setAvatarPreview] = useState<string>(

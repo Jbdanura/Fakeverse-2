@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 
 
 export function AccountSettings() {
-  const baseUrl = "http://localhost:5000"
+  const baseUrl = "https://fakeverse-2.onrender.com"
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")

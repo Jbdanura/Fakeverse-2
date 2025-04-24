@@ -20,7 +20,7 @@ export default function HomePage() {
     }
   }, []);
 
-  const baseUrl = "http://localhost:5000";
+  const baseUrl = "https://fakeverse-2.onrender.com";
 
   if (!token) {
     return <Auth baseUrl={baseUrl}/>;
