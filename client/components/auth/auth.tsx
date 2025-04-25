@@ -131,6 +131,11 @@ export default function Auth({ baseUrl }: AuthProps) {
           {message}
         </div>
       )}
+      <div className="mb-8 text-center">
+        <h1 className="text-5xl font-extrabold text-primary dark:text-white">
+          Fakeverse
+        </h1>
+      </div>
       <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 rounded shadow-md">
         {isLogin ? (
           <>
