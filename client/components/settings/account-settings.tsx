@@ -8,10 +8,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+interface accountProps {
+  baseUrl: string
+}
 
-
-export function AccountSettings() {
-  const baseUrl = "https://fakeverse-2.onrender.com"
+export function AccountSettings({baseUrl} : accountProps) {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")

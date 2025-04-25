@@ -34,16 +34,13 @@ export function Feed({ baseUrl }: FeedProps) {
   const [view, setView] = useState<"all" | "following">("all");
   const [messageErr,setMessageErr] = useState(null)
 
-  // pull your username from localStorage
   const me =
     typeof window !== "undefined"
       ? localStorage.getItem("username") || ""
       : "";
 
-  // hard-coded Cloudinary cloud name
   const cloudName = "dchytnqhl";
 
-  // build my own avatar URL
   const myAvatar =
     me && cloudName
       ? `https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${me}.png`

@@ -17,8 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera } from "lucide-react";
 
-export function ProfileSettings() {
-  const baseUrl = "https://fakeverse-2.onrender.com"
+interface settingsProps{
+  baseUrl:string;
+}
+
+export function ProfileSettings({baseUrl}:settingsProps) {
   const cloudName = "dchytnqhl";
   const [bio, setBio] = useState<string>("");
   const [avatarPreview, setAvatarPreview] = useState<string>(

@@ -6,8 +6,10 @@ import { Sidebar } from "@/components/sidebar";
 import { Feed } from "@/components/feed";
 import Auth from "@/components/auth/auth"; 
 
+
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null);
+  const baseUrl = "https://fakeverse-2.onrender.com"
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -20,7 +22,6 @@ export default function HomePage() {
     }
   }, []);
 
-  const baseUrl = "https://fakeverse-2.onrender.com";
 
   if (!token) {
     return <Auth baseUrl={baseUrl}/>;
@@ -28,7 +29,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
+      <Navbar baseUrl={baseUrl}/>
       <div className="container mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="hidden md:block">
           <Sidebar baseUrl={baseUrl}/>

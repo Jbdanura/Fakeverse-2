@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation';
 
 export default function ProfilePage({ searchParams }: { searchParams: { tab?: string } }) {
   const activeTab = "posts"
-  const baseUrl = "https://fakeverse-2.onrender.com" 
+  const baseUrl = "https://fakeverse-2.onrender.com"
 
   const params = useParams();
   const username = Array.isArray(params.username)
@@ -17,7 +17,7 @@ export default function ProfilePage({ searchParams }: { searchParams: { tab?: st
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
+      <Navbar baseUrl={baseUrl} />
       <div className="container mx-auto px-4 py-6">
         <ProfileHeader username={username} baseUrl={baseUrl} />
         <ProfileTabs  baseUrl={baseUrl} username={username} defaultTab={activeTab} />

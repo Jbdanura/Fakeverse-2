@@ -57,7 +57,7 @@ export function ProfilePosts({ baseUrl, username }: ProfilePostsProps) {
   }, [baseUrl, username]);
 
   if (loading) return <p>Loading posts...</p>;
-  if (posts.length === 0) return <p>No posts available.</p>;
+  if (posts.length === 0) return <p style={{textAlign:"center"}}>No posts available.</p>;
 
   return (
     <div className="space-y-4 max-w-3xl w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

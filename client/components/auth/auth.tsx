@@ -69,7 +69,6 @@ export default function Auth({ baseUrl }: AuthProps) {
       try {
         data = await res.json();
       } catch (error:any) {
-        console.error("Parsing error bro:", error);
         showMessage("Unexpected response from server.", "error");
         return;
       }
@@ -82,7 +81,6 @@ export default function Auth({ baseUrl }: AuthProps) {
         showMessage("Login successful!", "success", true);
       }
     } catch (error:any) {
-      console.error("Error during login:", error);
       showMessage(error.message, "error");
     }
   };
@@ -108,7 +106,6 @@ export default function Auth({ baseUrl }: AuthProps) {
       try {
         data = await res.json();
       } catch (jsonError) {
-        console.error("Parsing error:", jsonError);
         showMessage("Unexpected response from server.", "error");
         return;
       }
@@ -119,7 +116,6 @@ export default function Auth({ baseUrl }: AuthProps) {
         showMessage("Registration successful!", "success", true);
       }
     } catch (error:any) {
-      console.error("Error during registration:", error);
       showMessage(error.message, "error");
     }
   };

@@ -18,12 +18,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-export function Navbar() {
+interface navbarProps{
+  baseUrl: string;
+}
+
+export function Navbar({baseUrl}:navbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchError, setSearchError] = useState("");
   const router = useRouter();
-  const baseUrl = "http://localhost:5000"; 
 
   const cloudName = "dchytnqhl";
   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
@@ -54,7 +57,7 @@ export function Navbar() {
       });
       if (res.ok) {
         const data = await res.json();
-        console.log(data)
+
         if (data?.username) {
           router.push(`/profile/${data.username}`);
           setSearchQuery("");
@@ -67,7 +70,6 @@ export function Navbar() {
         setTimeout(() => setSearchError(""), 2000);
       }
     } catch (error) {
-      console.error("Error searching for user:", error);
       setSearchError("Error searching for user");
       setTimeout(() => setSearchError(""), 2000);
     }
@@ -159,7 +161,7 @@ export function Navbar() {
             <Search className="h-4 w-4" />
           </Button>
           {searchError && (
-            <div className="absolute top-full left-0 text-red-500 text-sm mt-1">
+            <div className="absolute top-full left-0 text-red-500 text-sm mt-3">
               {searchError}
             </div>
           )}

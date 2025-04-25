@@ -30,8 +30,7 @@ export function FollowersDialog({ open, onOpenChange, type, followers, following
   const handleTabChange = (value: string) => {
     setActiveTab(value)
   }
-  console.log("followers:",followers)
-  console.log("following",following)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] md:max-w-[600px]">

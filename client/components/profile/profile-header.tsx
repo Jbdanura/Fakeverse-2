@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar, LinkIcon, MapPin, MessageSquare, MoreHorizontal, UserPlus } from "lucide-react";
@@ -91,7 +90,6 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log(data)
         const profile = data.dataValues ? data.dataValues : data;
         const userProfile: UserProfile = {
           name: profile.name || profile.username,
@@ -163,10 +161,10 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
 
           {localStorage.getItem("username") !== username ? 
           <div className="flex items-center gap-2 mt-4 md:mt-0">
-            <Button variant="outline" size="sm" className="h-9">
+            {/*<Button variant="outline" size="sm" className="h-9">
               <MessageSquare className="h-4 w-4 mr-2" />
               Message
-            </Button>
+            </Button>*/}
             <Button size="sm" className="h-9" variant={isFollowing ? "outline" : "default"} onClick={toggleFollow}>
               {isFollowing ? (
                 "Following"
@@ -177,20 +175,6 @@ export function ProfileHeader({ username, baseUrl }: ProfileHeaderProps) {
                 </>
               )}
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">More options</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Share profile</DropdownMenuItem>
-                <DropdownMenuItem>Block user</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">Report profile</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
          : null }
          </div>
