@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation';
 
 export default function ProfilePage({ searchParams }: { searchParams: { tab?: string } }) {
   const activeTab = "posts"
+  /*const baseUrl = "http://localhost:5000"*/
   const baseUrl = "https://fakeverse-2.onrender.com"
 
   const params = useParams();

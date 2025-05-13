@@ -360,7 +360,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
             <div className="flex items-center gap-2 pt-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${localStorage.getItem("username")}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${localStorage.getItem("username")}.png`} alt="@user" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>{localStorage.getItem("username")?.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 flex items-center gap-2">
                 <Input

@@ -36,10 +36,7 @@ export function ProfileSettings({baseUrl}:settingsProps) {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64 = reader.result as string;
-      // optimistic preview
       setAvatarPreview(base64);
-
-      // upload to your server, which in turn pushes to Cloudinary
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
@@ -68,7 +65,6 @@ export function ProfileSettings({baseUrl}:settingsProps) {
     reader.readAsDataURL(file);
   };
 
-  // on mount, load existing avatar directly from Cloudinary by username
   useEffect(() => {
     const username = localStorage.getItem("username");
     if (username && cloudName) {
@@ -78,7 +74,6 @@ export function ProfileSettings({baseUrl}:settingsProps) {
     }
   }, [cloudName]);
 
-  // bio save (unchanged)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -128,7 +123,6 @@ export function ProfileSettings({baseUrl}:settingsProps) {
                   <AvatarImage key={avatarPreview} src={avatarPreview} alt="You" />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
-                {/* Invisible file input covering the camera button */}
                 <input
                   id="avatar-upload"
                   type="file"

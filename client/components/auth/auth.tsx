@@ -49,6 +49,30 @@ export default function Auth({ baseUrl }: AuthProps) {
     }, 1000);
   };
 
+  async function doLogin(username: string, password: string) {
+    try {
+      const res = await fetch(`${baseUrl}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      const data = await res.json();
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", data.username);
+      showMessage("Login successful!", "success", true);
+    } catch (err: any) {
+      showMessage(formatErrorMessage(err.message), "error");
+    }
+  }
+
+  const handleGuestLogin = async () => {
+    await doLogin("guest", "guest");
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -172,6 +196,12 @@ export default function Auth({ baseUrl }: AuthProps) {
                 Login
               </button>
             </form>
+            <button
+              onClick={handleGuestLogin}
+              className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-2 rounded"
+            >
+              Continue as Guest
+            </button>
           </>
         ) : (
           <>
