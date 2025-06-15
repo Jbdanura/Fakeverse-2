@@ -9,8 +9,8 @@ import Auth from "@/components/auth/auth";
 
 export default function HomePage() {
   const [token, setToken] = useState<string | null>(null);
-  /*const baseUrl = "http://localhost:5000"*/
-  const baseUrl = "https://fakeverse-2.onrender.com"
+  const baseUrl = "http://localhost:5000"
+  /*const baseUrl = "https://fakeverse-2.onrender.com"*/
 
   useEffect(() => {
     if (typeof window !== "undefined") {
