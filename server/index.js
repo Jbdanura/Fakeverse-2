@@ -4,6 +4,7 @@ const app = express();
 const {connect} = require("./db.js")
 const usersRouter = require("./controllers/users.js")
 const postsRouter = require("./controllers/posts.js")
+const chatsRouter = require("./controllers/chat.js")
 const cors = require('cors')
 const bodyParser = require("body-parser")
 const User = require("./models/user.js")
@@ -71,6 +72,7 @@ app.listen(process.env.PORT,()=>{
 
 app.use("/users",usersRouter)
 app.use("/posts",postsRouter)
+app.use("/chats",chatsRouter)
 
 const http = require("http");
 const https = require("https");
