@@ -59,6 +59,29 @@ chatRouter.get("/chat/:chatId", getToken, async(req,res)=>{
     }
 })
 
+chatRouter.get("/chat/:chatId/lastMessage",getToken, async(req,res)=>{
+    try {
+        const user = req.user;
+        const chat = await Chat.findOne({where:{id:req.params.chatId}})
+        if(!chat) return res.status(400).send("Chat doesn't exist")
+        if(chat.userId1 != user.id && chat.userId2 != user.id){
+            return res.status(400).send("You are not that chat participant");
+        }
+        const lastMessage = await Message.findOne({
+            where: {chatId: req.params.chatId},
+            order: [["createdAt", "DESC"]],
+            attributes: ["id","chatId","senderId","content","sentAt"]})
+        console.log(lastMessage)
+        if (!lastMessage) {
+            return res.status(200).json(null) 
+        }
+        return res.status(200).json(lastMessage)
+    } catch (error) {
+        console.log(error)
+        return res.status(400).send("Error retrieving chat")
+    }
+})
+
 chatRouter.post("/chat/:chatId/newMessage", getToken, async(req,res)=>{
     try {
         const user = req.user;
