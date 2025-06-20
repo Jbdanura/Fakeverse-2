@@ -46,18 +46,48 @@ chatRouter.get("/userChats",getToken,async(req,res)=>{
 
 chatRouter.get("/chat/:chatId", getToken, async(req,res)=>{
     try {
-        const user = req.user;
-        const chat = await Chat.findOne({where:{id:req.params.chatId}})
-        if(!chat) return res.status(400).send("Chat doesn't exist")
-        if(chat.userId1 != user.id && chat.userId2 != user.id){
-            return res.status(400).send("You are not that chat participant");
-        }
-        const messages = await Message.findAll({where:{chatId:req.params.chatId}})
-        return res.status(200).send(messages);
+      const user = req.user;
+      const chat = await Chat.findOne({ where: { id: req.params.chatId } });
+      if (!chat) {
+        return res.status(400).send("Chat doesn't exist");
+      }
+      if (chat.userId1 !== user.id && chat.userId2 !== user.id) {
+        return res.status(400).send("You are not that chat participant");
+      }
+
+      const messages = await Message.findAll({
+        where: { chatId: req.params.chatId },
+        attributes: ["id", "chatId", "senderId", "content", "sentAt"],
+        order: [["sentAt", "ASC"]],
+      });
+
+      const senderIds = Array.from(new Set(messages.map(m => m.senderId)));
+
+      const senders = await User.findAll({
+        where: { id: senderIds },
+        attributes: ["id", "username"]
+      });
+      const usernameById = senders.reduce((acc, u) => {
+        acc[u.id] = u.username;
+        return acc;
+      }, {});
+
+      const result = messages.map(m => ({
+        id: m.id,
+        chatId: m.chatId,
+        senderId: m.senderId,
+        senderUsername: usernameById[m.senderId] || "",
+        content: m.content,
+        sentAt: m.sentAt
+      }));
+
+      return res.status(200).json(result);
     } catch (error) {
-        return res.status(400).send("Error retrieving chat")
+      console.error(error);
+      return res.status(400).send("Error retrieving chat");
     }
-})
+  }
+);
 
 chatRouter.get("/chat/:chatId/lastMessage",getToken, async(req,res)=>{
     try {
@@ -67,15 +97,29 @@ chatRouter.get("/chat/:chatId/lastMessage",getToken, async(req,res)=>{
         if(chat.userId1 != user.id && chat.userId2 != user.id){
             return res.status(400).send("You are not that chat participant");
         }
+
         const lastMessage = await Message.findOne({
             where: {chatId: req.params.chatId},
             order: [["createdAt", "DESC"]],
             attributes: ["id","chatId","senderId","content","sentAt"]})
-        console.log(lastMessage)
+
         if (!lastMessage) {
             return res.status(200).json(null) 
         }
-        return res.status(200).json(lastMessage)
+
+        const sender = await User.findByPk(lastMessage.senderId, {
+            attributes: ["username"],
+        });
+
+        return res.status(200).json({
+            id: lastMessage.id,
+            chatId: lastMessage.chatId,
+            senderId: lastMessage.senderId,
+            senderUsername: sender ? sender.username : null,
+            content: lastMessage.content,
+            sentAt: lastMessage.sentAt,
+        })
+        
     } catch (error) {
         console.log(error)
         return res.status(400).send("Error retrieving chat")

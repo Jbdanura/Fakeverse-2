@@ -14,7 +14,8 @@ interface LastMessage {
   chatId: number,
   senderId: number,
   content:string,
-  sentAt: string
+  sentAt: string,
+  senderUsername: string
 }
 
 export function ChatInterface({baseUrl} : ChatInterfaceProps) {
@@ -22,40 +23,40 @@ export function ChatInterface({baseUrl} : ChatInterfaceProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [lastMessages,setLastMessages] = useState<LastMessage[]>([])
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  const fetchLast = async (chatId: number): Promise<LastMessage | null> => {
-    const res = await fetch(`${baseUrl}/chats/chat/${chatId}/lastMessage`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as LastMessage;
-  };
+    const fetchLast = async (chatId: number): Promise<LastMessage | null> => {
+      const res = await fetch(`${baseUrl}/chats/chat/${chatId}/lastMessage`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return (await res.json()) as LastMessage;
+    };
 
-  (async () => {
-    const res = await fetch(`${baseUrl}/chats/userChats`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const ids: { id: number }[] = await res.json();
+    (async () => {
+      const res = await fetch(`${baseUrl}/chats/userChats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const ids: { id: number }[] = await res.json();
 
-    const messages = await Promise.all(ids.map((c) => fetchLast(c.id)));
+      const messages = await Promise.all(ids.map((c) => fetchLast(c.id)));
 
-    const uniqueMessages = Array.from(
-      new Map(
-        messages
-          .filter((m): m is LastMessage => !!m)
-          .map((m) => [m.chatId, m] as [number, LastMessage])
-      ).values()
-    );
-    setLastMessages(uniqueMessages);
-  })();
-}, [baseUrl]);
+      const uniqueMessages = Array.from(
+        new Map(
+          messages
+            .filter((m): m is LastMessage => !!m)
+            .map((m) => [m.chatId, m] as [number, LastMessage])
+        ).values()
+      );
+      uniqueMessages.sort(
+        (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime()
+      );
+      setLastMessages(uniqueMessages);
+    })();
+  }, [baseUrl]);
 
-useEffect(() => {
-  console.log("lastMessages updated:", lastMessages);
-}, [lastMessages]);
 
   const handleChatSelect = (ChatId: number) => {
     setActiveChat(ChatId)
@@ -66,12 +67,12 @@ useEffect(() => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen)
   }
 
-  const selectedChat = lastMessages.find((conv) => conv.id === activeChat)
+  const selectedChatId = lastMessages.find((conv) => conv.chatId === activeChat)?.chatId;
 
-  return /*(
+  return (
    <div className="flex h-full rounded-lg overflow-hidden border bg-background">
       <ChatSidebar
-        LastMessages={LastMessages}
+        lastMessages={lastMessages}
         activeChatId={activeChat}
         onSelectChat={handleChatSelect}
         isMobileOpen={isMobileSidebarOpen}
@@ -79,13 +80,13 @@ useEffect(() => {
       />
 
       <div className="flex-1 flex flex-col">
-        {selectedChat ? (
-          <ChatMessages LastMessage={selectedLastMessage} onOpenSidebar={toggleMobileSidebar} />
+        {selectedChatId ? (
+          <ChatMessages baseUrl={baseUrl} chatId={selectedChatId} onOpenSidebar={toggleMobileSidebar} />
         ) : (
           <ChatEmpty onOpenSidebar={toggleMobileSidebar} />
         )}
       </div>
     </div>
-  )*/
+  )
 }
 
