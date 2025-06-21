@@ -33,6 +33,8 @@ export function ChatSidebar({
   className,
 }: ChatSidebarProps) {
 
+  const cloudName = "dchytnqhl";
+  
   return (
     <div
       className={cn(
@@ -58,7 +60,7 @@ export function ChatSidebar({
             >
               <div className="relative">
                 <Avatar>
-                  <AvatarImage  />
+                  <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${conversation.senderUsername}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${conversation.senderUsername}.png`} alt={conversation.senderUsername} />
                   <AvatarFallback>{conversation.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </div>

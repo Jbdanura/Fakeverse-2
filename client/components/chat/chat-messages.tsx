@@ -30,6 +30,7 @@ export function ChatMessages({ baseUrl, chatId, onOpenSidebar }: ChatMessagesPro
   const [messageText, setMessageText] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const cloudName = "dchytnqhl";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -119,9 +120,6 @@ export function ChatMessages({ baseUrl, chatId, onOpenSidebar }: ChatMessagesPro
             const sender = msg.senderUsername ?? "Unknown";
             const isOwn = sender === localStorage.getItem("username");
             const initial = sender.charAt(0).toUpperCase();
-            const avatarUrl = msg.senderUsername
-              ? `${baseUrl}/avatars/${msg.senderUsername}.png`
-              : "/placeholder.svg";
 
             return (
               <div
@@ -132,7 +130,7 @@ export function ChatMessages({ baseUrl, chatId, onOpenSidebar }: ChatMessagesPro
               >
                 {!isOwn && (
                   <Avatar className="h-8 w-8 mr-2">
-                    <AvatarImage src={avatarUrl} alt={sender} />
+                    <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${sender}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${sender}.png`} alt={sender} />
                     <AvatarFallback>{initial}</AvatarFallback>
                   </Avatar>
                 )}
@@ -155,7 +153,7 @@ export function ChatMessages({ baseUrl, chatId, onOpenSidebar }: ChatMessagesPro
 
                 {isOwn && (
                   <Avatar className="h-8 w-8 ml-2">
-                    <AvatarImage src={avatarUrl} alt={sender} />
+                    <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${sender}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${sender}.png`} alt={sender} />
                     <AvatarFallback>{initial}</AvatarFallback>
                   </Avatar>
                 )}
@@ -165,7 +163,6 @@ export function ChatMessages({ baseUrl, chatId, onOpenSidebar }: ChatMessagesPro
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="p-4 border-t">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon">

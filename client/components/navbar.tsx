@@ -208,7 +208,7 @@ export function Navbar({baseUrl}:navbarProps) {
                 onClick={() => {
                   localStorage.removeItem("token");
                   localStorage.removeItem("username");
-                  window.location.reload();
+                  router.replace("/")
                 }}
               >
                 Log out
