@@ -1,7 +1,7 @@
 const {DataTypes} = require("sequelize")
 const {sequelize} = require("../db")
 
-const Follow = sequelize.define("Follow",{
+const Follow = sequelize.define("follow",{
     followerId:{
         type: DataTypes.INTEGER,
         allowNull: false

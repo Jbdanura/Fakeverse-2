@@ -61,8 +61,8 @@ interface PostProps {
     content: string;
     image?: string;
     updatedAt: string;
-    Likes: Like[];
-    Comments: Comment[];
+    likes: Like[];
+    comments: Comment[];
     likedBy?: User[];
   };
   baseUrl: string;
@@ -72,20 +72,20 @@ interface PostProps {
 export function Post({ post, baseUrl, onDelete }: PostProps) {
   const loggedInUsername = localStorage.getItem("username");
   const initialLiked =
-    post.Likes && loggedInUsername
-      ? post.Likes.some((like: any) => like.user.username === loggedInUsername)
+    post.likes && loggedInUsername
+      ? post.likes.some((like: any) => like.user.username === loggedInUsername)
       : false;
   const [liked, setLiked] = useState(initialLiked);
   const [saved, setSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [likeCount, setLikeCount] = useState(post.Likes.length);
+  const [likeCount, setLikeCount] = useState(post.likes.length);
   const [showLikesDialog, setShowLikesDialog] = useState(false);
   const [showCommentLikesDialog, setShowCommentLikesDialog] = useState(false);
   const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>(post.Comments);
-  const [likedByUsers, setLikedByUsers] = useState(post.Likes);
+  const [comments, setComments] = useState<Comment[]>(post.comments);
+  const [likedByUsers, setLikedByUsers] = useState<Like[]>(post.likes);
   const [messageErr,setMessageErr] = useState("")
   const cloudName = "dchytnqhl";
 
@@ -160,7 +160,7 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
     setShowLikesDialog(true);
   };
 
-
+  console.log(post)
   const deletePost = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;

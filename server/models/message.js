@@ -1,7 +1,7 @@
 const {DataTypes} = require("sequelize");
 const {sequelize} = require("../db.js")
 
-const Message = sequelize.define("Message",{
+const Message = sequelize.define("message",{
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
