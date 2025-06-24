@@ -14,7 +14,8 @@ interface LastMessage {
   senderId: number,
   content:string,
   sentAt: string,
-  senderUsername:string
+  senderUsername:string,
+  otherUsername:string,
 }
 
 interface ChatSidebarProps {
@@ -34,7 +35,7 @@ export function ChatSidebar({
 }: ChatSidebarProps) {
 
   const cloudName = "dchytnqhl";
-  
+
   return (
     <div
       className={cn(
@@ -49,6 +50,7 @@ export function ChatSidebar({
 
       <ScrollArea className="flex-1">
         <div className="divide-y">
+
           {lastMessages.map((conversation) => (
             <button
               key={conversation.chatId}
@@ -60,14 +62,14 @@ export function ChatSidebar({
             >
               <div className="relative">
                 <Avatar>
-                  <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${conversation.senderUsername}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${conversation.senderUsername}.png`} alt={conversation.senderUsername} />
-                  <AvatarFallback>{conversation.senderUsername.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage key={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${conversation.otherUsername}.png`} src={`https://res.cloudinary.com/${cloudName}/image/upload/fakeverse/${conversation.otherUsername}.png`} alt={conversation.otherUsername} />
+                  <AvatarFallback>{conversation.otherUsername.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
-                  <span className="font-medium truncate">{conversation.senderUsername}</span>
+                  <span className="font-medium truncate">{conversation.otherUsername}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                     {conversation.sentAt.slice(0,10)}
                   </span>

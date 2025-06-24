@@ -7,11 +7,15 @@ const { Op } = require("sequelize");
 
 chatRouter.post("/chat", getToken, async (req,res) => {
     try {
+        const messageChat = req.body.message
+        if(messageChat.length < 1 || messageChat.length > 500) return res.status(400).send("Message too long/short")
         const user = req.user;
-        const userToId = req.body.userToId;
+        const usernameToFind = req.body.username
+        const userToFind = await User.findOne({where:{username:usernameToFind}})
+        if (!userToFind) return res.status(400).send("User doesn't exist");
+        const userToId = userToFind.id;
         if(user.id == userToId) return res.status(400).send("You can't message yourself")
         const userTo = await User.findOne({where:{id:userToId}});
-        if(!userTo) return res.status(400).send("User doesn't exist");
         let userOne;
         let userTwo;
         if (user.id < userTo.id){
@@ -25,12 +29,18 @@ chatRouter.post("/chat", getToken, async (req,res) => {
         if(!chat){
             const newChat = await Chat.create({userId1:userOne.id, userId2: userTwo.id})
             await newChat.save();
-            return res.status(200).send(newChat);
+            console.log("created chat")
+            const message = await Message.create({chatId: newChat.id,senderId: user.id, content:messageChat})
+            console.log("created message",message)
+            await message.save()
+            return res.status(200).json(newChat);
         } else {
-            return res.status(200).send("Chat already exists");
+            console.log("chat",chat)
+            return res.status(200).json(chat);
         }
     } catch (error) {
-        return res.status(400).send("Error creating chat")
+        console.log(error)
+        return res.status(400).json("Error creating chat")
     }
 })
 
@@ -72,6 +82,8 @@ chatRouter.get("/chat/:chatId", getToken, async(req,res)=>{
         return acc;
       }, {});
 
+
+
       const result = messages.map(m => ({
         id: m.id,
         chatId: m.chatId,
@@ -110,12 +122,17 @@ chatRouter.get("/chat/:chatId/lastMessage",getToken, async(req,res)=>{
         const sender = await User.findByPk(lastMessage.senderId, {
             attributes: ["username"],
         });
-
+        const otherUserId = chat.userId1 === user.id ? chat.userId2 : chat.userId1;
+        const other = await User.findByPk(otherUserId, {
+            attributes: ["username"],
+        });
+        const otherUsername = other?.username || "";
         return res.status(200).json({
             id: lastMessage.id,
             chatId: lastMessage.chatId,
             senderId: lastMessage.senderId,
             senderUsername: sender ? sender.username : null,
+            otherUsername,
             content: lastMessage.content,
             sentAt: lastMessage.sentAt,
         })

@@ -1,14 +1,26 @@
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, MessageSquare } from "lucide-react"
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, MessageSquare } from "lucide-react";
 
 interface ChatEmptyProps {
-  onOpenSidebar: () => void
+  onOpenSidebar: () => void;
+  onStartChat: (username: string,message:string) => void;
 }
 
-export function ChatEmpty({ onOpenSidebar }: ChatEmptyProps) {
+export function ChatEmpty({ onOpenSidebar, onStartChat }: ChatEmptyProps) {
+  const [username, setUsername] = useState("");
+  const [message, setMessage] = useState("");
+
   return (
     <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-      <Button variant="ghost" size="icon" className="md:hidden mb-4" onClick={onOpenSidebar}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden mb-4"
+        onClick={onOpenSidebar}
+      >
         <ChevronLeft className="h-5 w-5" />
         <span className="sr-only">Open conversations</span>
       </Button>
@@ -19,11 +31,30 @@ export function ChatEmpty({ onOpenSidebar }: ChatEmptyProps) {
         </div>
         <h3 className="text-xl font-semibold mb-2">Your Messages</h3>
         <p className="text-muted-foreground mb-4">
-          Select a conversation from the sidebar or start a new chat to begin messaging.
+          Start a new chat by entering a username below.
         </p>
-        <Button>Start a new conversation</Button>
+        <input
+          type="text"
+          placeholder="Username..."
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-full px-3 py-2 border rounded mb-2"
+        />
+        <input
+          type="text"
+          placeholder="Message..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full px-3 py-2 border rounded mb-2"
+        />
+        <Button
+          onClick={() => {
+            if (username.trim()) onStartChat(username.trim(), message);
+          }}
+        >
+          Start Conversation
+        </Button>
       </div>
     </div>
-  )
+  );
 }
-

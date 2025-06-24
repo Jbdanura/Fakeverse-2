@@ -160,7 +160,6 @@ export function Post({ post, baseUrl, onDelete }: PostProps) {
     setShowLikesDialog(true);
   };
 
-  console.log(post)
   const deletePost = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
