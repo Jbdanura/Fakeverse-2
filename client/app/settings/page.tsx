@@ -2,8 +2,8 @@ import { Navbar } from "@/components/navbar"
 import { SettingsTabs } from "@/components/settings/settings-tabs"
 
 export default function SettingsPage() {
-  const baseUrl = "http://localhost:5000"
-  /*const baseUrl = "https://fakeverse-2.onrender.com"*/
+  /*const baseUrl = "http://localhost:5000"*/
+  const baseUrl = "https://fakeverse-2.onrender.com"
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar baseUrl={baseUrl}/>
