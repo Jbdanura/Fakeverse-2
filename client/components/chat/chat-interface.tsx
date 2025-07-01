@@ -64,43 +64,58 @@ export function ChatInterface({ baseUrl }: ChatInterfaceProps) {
     }
   }
 
-
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const token = localStorage.getItem("token")
+    if (!token) return
 
-    async function loadLastMessages() {
-      const res = await fetch(`${baseUrl}/chats/userChats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const ids: { id: number }[] = await res.json();
+    let isMounted = true
 
-      const fetchLast = async (chatId: number): Promise<LastMessage | null> => {
-        const r2 = await fetch(`${baseUrl}/chats/chat/${chatId}/lastMessage`, {
+    const loadLastMessages = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/chats/userChats`, {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r2.ok) return null;
-        return (await r2.json()) as LastMessage;
-      };
+        })
+        if (!res.ok) return
 
-      const messages = await Promise.all(ids.map((c) => fetchLast(c.id)));
-      console.log(messages)
-      const unique = Array.from(
-        new Map(
-          messages
-            .filter((m): m is LastMessage => !!m)
-            .map((m) => [m.chatId, m] as [number, LastMessage])
-        ).values()
-      );
-      unique.sort(
-        (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime()
-      );
-      setLastMessages(unique);
+        const ids: { id: number }[] = await res.json()
+
+        const fetchLast = async (chatId: number): Promise<LastMessage | null> => {
+          const r2 = await fetch(`${baseUrl}/chats/chat/${chatId}/lastMessage`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          if (!r2.ok) return null
+          return (await r2.json()) as LastMessage
+        }
+
+        const messages = await Promise.all(ids.map((c) => fetchLast(c.id)))
+        if (!isMounted) return
+
+        const unique = Array.from(
+          new Map(
+            messages
+              .filter((m): m is LastMessage => !!m)
+              .map((m) => [m.chatId, m] as [number, LastMessage])
+          ).values()
+        )
+
+        unique.sort(
+          (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime()
+        )
+
+        setLastMessages(unique)
+      } catch (err) {
+        console.error("Failed to load last messages", err)
+      }
     }
 
-    loadLastMessages();
-  }, [baseUrl]);
+    loadLastMessages()
+    const interval = setInterval(loadLastMessages, 5000)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [baseUrl])
 
   const selectedLastMessage = lastMessages.find((m) => m.chatId === activeChat);
 

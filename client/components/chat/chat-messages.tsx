@@ -33,27 +33,41 @@ export function ChatMessages({ baseUrl, chatId, onOpenSidebar }: ChatMessagesPro
   const cloudName = "dchytnqhl";
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const token = localStorage.getItem("token")
+    if (!token) return
 
-    fetch(`${baseUrl}/chats/chat/${chatId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load messages");
-        return res.json();
+    let isMounted = true
+
+    const loadMessages = () => {
+      fetch(`${baseUrl}/chats/chat/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .then((msgs: Message[]) => {
-        setMessages(msgs);
-        setTimeout(() => {
-          if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTop =
-              scrollAreaRef.current.scrollHeight;
-          }
-        }, 0);
-      })
-      .catch(console.error);
-  }, [baseUrl, chatId]);
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to load messages")
+          return res.json()
+        })
+        .then((msgs: Message[]) => {
+          if (!isMounted) return
+          setMessages(msgs)
+          setTimeout(() => {
+            if (scrollAreaRef.current) {
+              scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+            }
+          }, 0)
+        })
+        .catch(console.error)
+    }
+
+    loadMessages()
+
+    const interval = setInterval(loadMessages, 5000)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [baseUrl, chatId])
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
